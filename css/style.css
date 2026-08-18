@@ -1,0 +1,49 @@
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+* {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    background-color: #0f172a;
+    color: #f8fafc;
+    font-family: 'Pretendard', sans-serif;
+    overflow-x: hidden;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.radar-bar {
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glow-effect {
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+}
+
+.tab-active {
+    color: #3b82f6;
+}
+
+.tab-inactive {
+    color: #64748b;
+}
+
+/* Drag and Drop styles */
+.dragging {
+    opacity: 0.5;
+    transform: scale(0.98);
+    z-index: 50;
+}
+
+.drag-over {
+    border: 2px dashed #3b82f6;
+}
