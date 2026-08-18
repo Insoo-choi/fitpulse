@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">FitPulse Pro</string>
+    <string name="app_tagline">스마트 점진적 과부하</string>
+    <string name="nav_home">홈</string>
+    <string name="nav_workout">운동 시작</string>
+    <string name="nav_report">리포트</string>
+</resources>
