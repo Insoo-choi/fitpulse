@@ -697,12 +697,13 @@
             }
             
             const modal = document.createElement('div');
+            modal.id = 'date-info-modal';
             modal.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4 fade-in';
             modal.innerHTML = `
                 <div class="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-sm flex flex-col overflow-hidden">
                     <div class="p-4 border-b border-slate-800 bg-slate-900 flex justify-between items-center">
                         <h3 class="font-black text-white text-lg">${dateStr} 기록</h3>
-                        <button onclick="this.closest('.fixed').remove()" class="text-slate-400 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
+                        <button onclick="document.getElementById('date-info-modal').remove()" class="text-slate-400 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
                     </div>
                     <div class="p-4 max-h-[50vh] overflow-y-auto no-scrollbar">${wInfo}</div>
                     
@@ -737,7 +738,7 @@
                 pace: `${paceMin}'${paceSec}"`
             });
             saveData();
-            document.querySelector('.z-\\[100\\]').remove();
+            document.getElementById('date-info-modal').remove();
             renderCalendar();
         }
 
