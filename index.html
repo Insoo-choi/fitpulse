@@ -522,6 +522,7 @@
         let replaceTargetIndex = -1;
         let currentRpeExerciseIndex = -1;
         let currentExerciseCategoryFilter = 'all';
+        let lastFinishedWorkout = null;
 
         window.onload = () => {
             lucide.createIcons();
@@ -1417,6 +1418,7 @@
             
             state.history.push(record);
             state.workoutCount++;
+            lastFinishedWorkout = record;
             saveData();
             
             // Calc stats
@@ -1476,6 +1478,57 @@
         function closeSummary() {
             document.getElementById('summary-modal').classList.add('hidden');
             switchTab('home');
+        }
+
+        function copyWorkoutSummary() {
+            const workout = lastFinishedWorkout || (state.history.length > 0 ? state.history[state.history.length - 1] : null);
+            if (!workout) {
+                alert('복사할 운동 기록이 없습니다.');
+                return;
+            }
+            
+            let text = `🔥 FitPulse Pro 운동 완료!\n`;
+            text += `📅 날짜: ${workout.date}\n`;
+            text += `🏋️ 루틴: ${workout.name || '자율 운동'}\n`;
+            text += `⏱️ 시간: ${workout.duration}분 | 📊 총 볼륨: ${workout.totalVolume || 0}kg\n\n`;
+            text += `[운동 목록]\n`;
+            
+            if (workout.exercises && workout.exercises.length > 0) {
+                workout.exercises.forEach((ex, idx) => {
+                    text += `${idx + 1}. ${ex.name}\n`;
+                    if (ex.sets && ex.sets.length > 0) {
+                        ex.sets.forEach((s, sIdx) => {
+                            text += `   - ${sIdx + 1}세트: ${s.weight}kg x ${s.reps}회\n`;
+                        });
+                    }
+                });
+            }
+            
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    alert('📋 운동 기록이 클립보드에 복사되었습니다!');
+                }).catch(() => {
+                    fallbackCopyText(text);
+                });
+            } else {
+                fallbackCopyText(text);
+            }
+        }
+
+        function fallbackCopyText(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                alert('📋 운동 기록이 클립보드에 복사되었습니다!');
+            } catch (err) {
+                alert('클립보드 복사에 실패했습니다.');
+            }
+            document.body.removeChild(textarea);
         }
 
         // Just empty shells to prevent UI crashing from buttons in HTML that are not strictly necessary to fix the blank screen bug.
