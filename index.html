@@ -121,6 +121,42 @@
         </div>
     </div>
 
+    <!-- Custom Exercise Modal -->
+    <div id="custom-exercise-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-sm flex flex-col p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-white">새 운동 직접 입력</h3>
+                <button onclick="closeModal('custom-exercise-modal')" class="text-slate-400 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="space-y-4 mb-6">
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-1">운동 이름</label>
+                    <input type="text" id="custom-ex-name" placeholder="예: 인클라인 덤벨 벤치프레스" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-brand-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-1">운동 부위</label>
+                    <select id="custom-ex-category" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-brand-500">
+                        <option value="가슴">가슴</option>
+                        <option value="등">등</option>
+                        <option value="하체">하체</option>
+                        <option value="어깨">어깨</option>
+                        <option value="팔">팔</option>
+                        <option value="코어">코어</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-1">과부하 분류 (AI 증량 기준)</label>
+                    <select id="custom-ex-type" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-brand-500">
+                        <option value="upper_compound">🏋️ 상체 다관절 (벤치, 로우, 풀다운 등)</option>
+                        <option value="large_compound">💪 대근육 복합 (스쿼트, 데드, 레그프레스)</option>
+                        <option value="isolation">🎯 소근육 고립 (사레레, 컬, 삼두 등)</option>
+                    </select>
+                </div>
+            </div>
+            <button onclick="saveCustomExercise()" class="w-full bg-brand-600 text-white font-bold py-3.5 rounded-xl active:bg-brand-500 shadow-lg shadow-brand-500/20 transition-all">운동 추가하기</button>
+        </div>
+    </div>
+
     <!-- Edit Set Modal (Compact Keypad style) -->
     <div id="set-edit-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] hidden flex items-end sm:items-center justify-center">
         <div class="bg-slate-900 w-full sm:w-80 rounded-t-3xl sm:rounded-3xl p-5 border-t sm:border border-slate-700 shadow-2xl flex flex-col pb-8 sm:pb-5">
@@ -1597,6 +1633,36 @@
         }
 
         function filterExercises() { renderExerciseList(); }
+
+        function addCustomExercise() {
+            document.getElementById('custom-ex-name').value = '';
+            document.getElementById('custom-exercise-modal').classList.remove('hidden');
+        }
+
+        function saveCustomExercise() {
+            const name = (document.getElementById('custom-ex-name').value || '').trim();
+            if (!name) {
+                alert('운동 이름을 입력해주세요.');
+                return;
+            }
+            if (exerciseDB.some(e => e.name === name)) {
+                alert('이미 존재하는 운동 이름입니다.');
+                return;
+            }
+            const category = document.getElementById('custom-ex-category').value;
+            const type = document.getElementById('custom-ex-type').value;
+            
+            const newEx = { name, category, type };
+            exerciseDB.unshift(newEx);
+            saveData();
+            
+            closeModal('custom-exercise-modal');
+            renderExerciseList();
+            
+            if (state.activeWorkout || replaceTargetIndex > -1) {
+                selectExercise(name);
+            }
+        }
         function setCategoryFilter(cat) { 
             currentExerciseCategoryFilter = cat;
             document.querySelectorAll('.cat-btn').forEach(btn => {
