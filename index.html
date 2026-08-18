@@ -566,6 +566,14 @@
                 }
             });
 
+            // Load active workout if exists
+            const savedActive = localStorage.getItem('fitpulse_active');
+            if (savedActive) {
+                try {
+                    state.activeWorkout = JSON.parse(savedActive);
+                } catch (e) {}
+            }
+
             const savedDB = localStorage.getItem(EXERCISE_DB_KEY);
             if (savedDB) {
                 exerciseDB = JSON.parse(savedDB);
@@ -582,6 +590,9 @@
         function saveData() {
             localStorage.setItem(DB_KEY, JSON.stringify(state));
             localStorage.setItem(EXERCISE_DB_KEY, JSON.stringify(exerciseDB));
+            if (state.activeWorkout) {
+                localStorage.setItem('fitpulse_active', JSON.stringify(state.activeWorkout));
+            }
         }
 
         // --- Category & Classification ---
@@ -623,12 +634,51 @@
             loadData();
             if (state.activeWorkout) {
                 switchTab('workout_active');
+                restoreRestTimerState();
             } else {
                 switchTab('home');
             }
             // Bind manual drag drop events
             bindDragEvents();
+            setupLifecycleListeners();
         };
+
+        function setupLifecycleListeners() {
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    if (state.activeWorkout) {
+                        const timerEl = document.getElementById('workout-timer');
+                        if (timerEl && state.activeWorkout.startTime) {
+                            const diff = Date.now() - state.activeWorkout.startTime;
+                            const h = Math.floor(diff / 3600000).toString().padStart(2, '0');
+                            const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
+                            const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
+                            timerEl.innerText = `${h}:${m}:${s}`;
+                        }
+                        restoreRestTimerState();
+                    }
+                } else {
+                    if (state.activeWorkout) {
+                        saveActiveWorkout();
+                        saveRestTimerState();
+                    }
+                }
+            });
+
+            window.addEventListener('pagehide', () => {
+                if (state.activeWorkout) {
+                    saveActiveWorkout();
+                    saveRestTimerState();
+                }
+            });
+
+            window.addEventListener('beforeunload', () => {
+                if (state.activeWorkout) {
+                    saveActiveWorkout();
+                    saveRestTimerState();
+                }
+            });
+        }
 
         function switchTab(tab) {
             currentTab = tab;
@@ -1248,11 +1298,43 @@
             return false;
         }
 
+        function saveRestTimerState() {
+            if (isResting && restTargetTime) {
+                localStorage.setItem('fitpulse_rest_timer', JSON.stringify({
+                    restTargetTime: restTargetTime,
+                    isResting: true
+                }));
+            } else {
+                localStorage.removeItem('fitpulse_rest_timer');
+            }
+        }
+
+        function restoreRestTimerState() {
+            const saved = localStorage.getItem('fitpulse_rest_timer');
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    if (data && data.isResting && data.restTargetTime) {
+                        isResting = true;
+                        restTargetTime = data.restTargetTime;
+                        const timerEl = document.getElementById('rest-timer');
+                        if (timerEl) {
+                            timerEl.classList.remove('hidden');
+                            if (timerInterval) clearInterval(timerInterval);
+                            timerInterval = setInterval(updateRestTimerDisplay, 100);
+                            updateRestTimerDisplay();
+                        }
+                    }
+                } catch(e) {}
+            }
+        }
+
         function startRestTimer() {
             if (isResting) clearInterval(timerInterval);
             isResting = true;
             isOvertime = false;
             restTargetTime = Date.now() + (state.defaultRestTime * 1000); // 사용자 맞춤 기본 시간 적용
+            saveRestTimerState();
             
             const timerEl = document.getElementById('rest-timer');
             timerEl.classList.remove('hidden');
@@ -1268,6 +1350,7 @@
             const now = Date.now();
             const diff = restTargetTime - now;
             const display = document.getElementById('rest-time-display');
+            if (!display) return;
             
             if (diff <= 0) {
                 if (!isOvertime) {
@@ -1276,9 +1359,12 @@
                     const audio = document.getElementById('beep-sound');
                     if(audio) audio.play().catch(e=>{});
                     
-                    document.getElementById('rest-icon-container').className = 'bg-rose-900/50 p-2 rounded-lg animate-pulse';
-                    document.getElementById('rest-icon').classList.replace('text-brand-400', 'text-rose-400');
-                    document.getElementById('rest-label').innerText = '휴식 초과';
+                    const iconCont = document.getElementById('rest-icon-container');
+                    if (iconCont) iconCont.className = 'bg-rose-900/50 p-2 rounded-lg animate-pulse';
+                    const icon = document.getElementById('rest-icon');
+                    if (icon) icon.classList.replace('text-brand-400', 'text-rose-400');
+                    const label = document.getElementById('rest-label');
+                    if (label) label.innerText = '휴식 초과';
                     display.classList.replace('text-white', 'text-rose-400');
                 }
                 const overDiff = Math.abs(diff);
@@ -1297,12 +1383,15 @@
             // 사용자가 시간을 변경하면 다음번 휴식 타이머의 기본값으로 영구 기억합니다. (최소 30초)
             state.defaultRestTime = Math.max(30, state.defaultRestTime + secs);
             saveData();
+            saveRestTimerState();
         }
         
         function skipRestTime() {
             isResting = false;
             clearInterval(timerInterval);
-            document.getElementById('rest-timer').classList.add('hidden');
+            saveRestTimerState();
+            const timerEl = document.getElementById('rest-timer');
+            if (timerEl) timerEl.classList.add('hidden');
         }
 
         function openSetEditModal(exIndex, setIndex) {
