@@ -107,7 +107,8 @@
                 <button onclick="setCategoryFilter('등')" class="cat-btn px-4 py-1.5 rounded-full text-xs font-bold bg-slate-800 text-slate-400 whitespace-nowrap" data-cat="등">등</button>
                 <button onclick="setCategoryFilter('하체')" class="cat-btn px-4 py-1.5 rounded-full text-xs font-bold bg-slate-800 text-slate-400 whitespace-nowrap" data-cat="하체">하체</button>
                 <button onclick="setCategoryFilter('어깨')" class="cat-btn px-4 py-1.5 rounded-full text-xs font-bold bg-slate-800 text-slate-400 whitespace-nowrap" data-cat="어깨">어깨</button>
-                <button onclick="setCategoryFilter('팔')" class="cat-btn px-4 py-1.5 rounded-full text-xs font-bold bg-slate-800 text-slate-400 whitespace-nowrap" data-cat="팔">팔/코어</button>
+                <button onclick="setCategoryFilter('팔')" class="cat-btn px-4 py-1.5 rounded-full text-xs font-bold bg-slate-800 text-slate-400 whitespace-nowrap" data-cat="팔">팔</button>
+                <button onclick="setCategoryFilter('코어')" class="cat-btn px-4 py-1.5 rounded-full text-xs font-bold bg-slate-800 text-slate-400 whitespace-nowrap" data-cat="코어">코어</button>
             </div>
             
             <div class="flex-1 overflow-y-auto p-4" id="exercise-list">
@@ -384,7 +385,12 @@
             { name: '머신 프리처 컬', category: '팔', type: 'isolation' },
             { name: '베이비안 케이블 컬', category: '팔', type: 'isolation' },
             { name: '오버헤드 케이블 익스텐션', category: '팔', type: 'isolation' },
-            { name: '케이블 킥백', category: '팔', type: 'isolation' }
+            { name: '케이블 킥백', category: '팔', type: 'isolation' },
+            // Core
+            { name: '행잉 레그 레이즈', category: '코어', type: 'isolation' },
+            { name: '플랭크', category: '코어', type: 'isolation' },
+            { name: '케이블 크런치', category: '코어', type: 'isolation' },
+            { name: '앱 롤아웃', category: '코어', type: 'isolation' }
         ];
 
         let exerciseDB = [];
@@ -470,6 +476,11 @@
             const savedDB = localStorage.getItem(EXERCISE_DB_KEY);
             if (savedDB) {
                 exerciseDB = JSON.parse(savedDB);
+                defaultExercises.forEach(de => {
+                    if (!exerciseDB.find(e => e.name === de.name)) {
+                        exerciseDB.push(de);
+                    }
+                });
             } else {
                 exerciseDB = [...defaultExercises];
             }
@@ -510,6 +521,7 @@
         let currentEditingSet = null; // {exIndex, setIndex}
         let replaceTargetIndex = -1;
         let currentRpeExerciseIndex = -1;
+        let currentExerciseCategoryFilter = 'all';
 
         window.onload = () => {
             lucide.createIcons();
@@ -1491,8 +1503,11 @@
 
         function renderExerciseList() {
             const listEl = document.getElementById('exercise-list');
-            const search = document.getElementById('exercise-search').value.toLowerCase();
-            const filtered = exerciseDB.filter(e => e.name.toLowerCase().includes(search));
+            const search = (document.getElementById('exercise-search').value || '').toLowerCase();
+            let filtered = exerciseDB.filter(e => e.name.toLowerCase().includes(search));
+            if (currentExerciseCategoryFilter !== 'all') {
+                filtered = filtered.filter(e => e.category === currentExerciseCategoryFilter);
+            }
             
             listEl.innerHTML = filtered.map(e => `
                 <div class="flex justify-between items-center bg-slate-800 p-4 rounded-xl mb-3 active:bg-slate-700 transition-colors shadow-sm cursor-pointer" onclick="selectExercise('${e.name}')">
@@ -1530,27 +1545,14 @@
 
         function filterExercises() { renderExerciseList(); }
         function setCategoryFilter(cat) { 
+            currentExerciseCategoryFilter = cat;
             document.querySelectorAll('.cat-btn').forEach(btn => {
                 btn.className = 'cat-btn px-4 py-1.5 rounded-full text-xs font-bold bg-slate-800 text-slate-400 whitespace-nowrap';
             });
             const activeBtn = document.querySelector(`.cat-btn[data-cat="${cat}"]`);
             if(activeBtn) activeBtn.className = 'cat-btn px-4 py-1.5 rounded-full text-xs font-bold bg-brand-600 text-white whitespace-nowrap';
             
-            const search = document.getElementById('exercise-search').value.toLowerCase();
-            const listEl = document.getElementById('exercise-list');
-            
-            // 필터링 시 한글 카테고리와 시스템 카테고리(large_compound 등) 매핑 처리
-            let filtered = exerciseDB.filter(e => e.name.toLowerCase().includes(search));
-            if(cat !== 'all') {
-                filtered = filtered.filter(e => e.category === cat);
-            }
-            
-            listEl.innerHTML = filtered.map(e => `
-                <div class="flex justify-between items-center bg-slate-800 p-4 rounded-xl mb-3 active:bg-slate-700 transition-colors shadow-sm cursor-pointer" onclick="selectExercise('${e.name}')">
-                    <span class="font-bold text-white text-sm">${e.name}</span>
-                    <span class="text-[10px] bg-brand-900/50 text-brand-300 border border-brand-700/50 px-2 py-1 rounded-md font-bold">${getOverloadTypeLabel(e.type || 'isolation')}</span>
-                </div>
-            `).join('');
+            renderExerciseList();
         }
 
         function saveProfileSettings() {
