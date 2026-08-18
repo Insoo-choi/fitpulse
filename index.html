@@ -233,9 +233,12 @@
     <div id="routine-edit-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] hidden flex flex-col justify-end">
         <div class="bg-slate-900 w-full h-[90vh] rounded-t-3xl border-t border-slate-700 flex flex-col pb-safe relative">
             <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900 rounded-t-3xl z-10">
-                <button onclick="closeModal('routine-edit-modal')" class="text-slate-400">취소</button>
-                <h3 class="font-bold text-white text-lg">루틴 편집</h3>
-                <button onclick="saveRoutineEdit()" class="text-brand-400 font-bold">저장</button>
+                <button onclick="closeModal('routine-edit-modal')" class="text-slate-400 font-bold text-sm">취소</button>
+                <h3 class="font-bold text-white text-lg" id="routine-modal-title">루틴 편집</h3>
+                <div class="flex items-center gap-2">
+                    <button onclick="deleteCurrentRoutine()" id="btn-delete-routine" class="text-rose-400 font-bold text-sm hidden">삭제</button>
+                    <button onclick="saveRoutineEdit()" class="text-brand-400 font-bold text-sm bg-brand-900/30 px-3 py-1.5 rounded-full">저장</button>
+                </div>
             </div>
             
             <div class="p-4 bg-slate-900 z-10 shadow-sm border-b border-slate-800">
@@ -247,8 +250,8 @@
             </div>
             
             <div class="p-4 border-t border-slate-800 bg-slate-900">
-                <button onclick="openExerciseModal(true)" class="w-full py-3 border-2 border-dashed border-slate-600 text-slate-400 font-bold rounded-xl active:bg-slate-800 transition-colors">
-                    + 종목 추가하기
+                <button onclick="openRoutineExerciseAddModal()" class="w-full py-3 border-2 border-dashed border-slate-600 text-slate-400 hover:text-white font-bold rounded-xl active:bg-slate-800 transition-colors flex items-center justify-center gap-2">
+                    <i data-lucide="plus" class="w-4 h-4"></i> 종목 추가하기
                 </button>
             </div>
         </div>
@@ -559,6 +562,7 @@
         let currentRpeExerciseIndex = -1;
         let currentExerciseCategoryFilter = 'all';
         let lastFinishedWorkout = null;
+        let isEditingForRoutine = false;
 
         window.onload = () => {
             lucide.createIcons();
@@ -1572,10 +1576,171 @@
             document.body.removeChild(textarea);
         }
 
-        // Just empty shells to prevent UI crashing from buttons in HTML that are not strictly necessary to fix the blank screen bug.
+        // --- Routine CRUD Implementation ---
         function openRoutinePasteModal() { alert("붙여넣기 기능은 전체 코드 최적화 중 제외되었습니다."); }
-        function createNewRoutine() { alert("루틴 생성 기능은 전체 코드 최적화 중 제외되었습니다."); }
-        function openRoutineEditModal(id) { alert("루틴 편집 기능은 전체 코드 최적화 중 제외되었습니다."); }
+        
+        function createNewRoutine() {
+            editingRoutineId = null;
+            editingRoutine = {
+                id: 'routine_' + Date.now(),
+                name: '',
+                exercises: []
+            };
+            document.getElementById('routine-modal-title').innerText = '새 루틴 생성';
+            document.getElementById('edit-routine-name').value = '';
+            document.getElementById('btn-delete-routine').classList.add('hidden');
+            renderRoutineEditExercises();
+            document.getElementById('routine-edit-modal').classList.remove('hidden');
+        }
+
+        function openRoutineEditModal(id) {
+            editingRoutineId = id;
+            const r = state.routines.find(x => x.id === id);
+            if (!r) return;
+            editingRoutine = JSON.parse(JSON.stringify(r));
+            document.getElementById('routine-modal-title').innerText = '루틴 편집';
+            document.getElementById('edit-routine-name').value = editingRoutine.name;
+            document.getElementById('btn-delete-routine').classList.remove('hidden');
+            renderRoutineEditExercises();
+            document.getElementById('routine-edit-modal').classList.remove('hidden');
+        }
+
+        function renderRoutineEditExercises() {
+            const container = document.getElementById('routine-edit-exercises');
+            if (!container || !editingRoutine) return;
+            
+            if (!editingRoutine.exercises || editingRoutine.exercises.length === 0) {
+                container.innerHTML = `<div class="text-slate-500 text-center py-12 text-sm font-bold">등록된 운동이 없습니다.<br>하단의 '+ 종목 추가하기'를 눌러 추가해보세요.</div>`;
+                return;
+            }
+            
+            container.innerHTML = editingRoutine.exercises.map((ex, exIdx) => {
+                let setsHtml = (ex.sets || []).map((s, sIdx) => `
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="w-6 text-slate-500 font-bold text-xs text-center">${sIdx + 1}</span>
+                        <div class="flex-1 flex items-center bg-slate-800 rounded-xl px-3 py-1.5 border border-slate-700/50">
+                            <input type="number" step="0.5" value="${s.weight || 0}" class="w-full bg-transparent text-center text-white font-bold text-sm outline-none" oninput="updateRoutineSetVal(${exIdx}, ${sIdx}, 'weight', this.value)">
+                            <span class="text-[10px] text-slate-500 font-bold ml-1">kg</span>
+                        </div>
+                        <div class="flex-1 flex items-center bg-slate-800 rounded-xl px-3 py-1.5 border border-slate-700/50">
+                            <input type="number" value="${s.reps || 0}" class="w-full bg-transparent text-center text-white font-bold text-sm outline-none" oninput="updateRoutineSetVal(${exIdx}, ${sIdx}, 'reps', this.value)">
+                            <span class="text-[10px] text-slate-500 font-bold ml-1">회</span>
+                        </div>
+                        <button onclick="removeRoutineSet(${exIdx}, ${sIdx})" class="text-slate-500 hover:text-rose-400 p-1.5 active:scale-95"><i data-lucide="minus-circle" class="w-4 h-4"></i></button>
+                    </div>
+                `).join('');
+                
+                return `
+                    <div class="bg-slate-800/80 rounded-2xl p-4 border border-slate-700/50">
+                        <div class="flex justify-between items-center mb-3">
+                            <h4 class="font-black text-white text-base truncate pr-2">${ex.name}</h4>
+                            <div class="flex items-center gap-1 shrink-0">
+                                <button onclick="moveRoutineExercise(${exIdx}, -1)" class="p-1.5 text-slate-400 hover:text-white bg-slate-700 rounded-lg active:scale-95" ${exIdx === 0 ? 'disabled style="opacity:0.3"' : ''}><i data-lucide="chevron-up" class="w-4 h-4"></i></button>
+                                <button onclick="moveRoutineExercise(${exIdx}, 1)" class="p-1.5 text-slate-400 hover:text-white bg-slate-700 rounded-lg active:scale-95" ${exIdx === editingRoutine.exercises.length - 1 ? 'disabled style="opacity:0.3"' : ''}><i data-lucide="chevron-down" class="w-4 h-4"></i></button>
+                                <button onclick="removeRoutineExercise(${exIdx})" class="p-1.5 text-rose-400 hover:text-rose-300 bg-rose-950/40 border border-rose-800/30 rounded-lg ml-1 active:scale-95"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            </div>
+                        </div>
+                        <div class="bg-slate-900/60 p-3 rounded-xl">
+                            ${setsHtml}
+                            <button onclick="addRoutineSet(${exIdx})" class="w-full mt-1 py-1.5 border border-dashed border-slate-700 text-slate-400 hover:text-slate-200 text-xs font-bold rounded-lg active:bg-slate-800">+ 세트 추가</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            lucide.createIcons({ root: container });
+        }
+
+        function updateRoutineSetVal(exIdx, sIdx, field, val) {
+            if (editingRoutine && editingRoutine.exercises[exIdx] && editingRoutine.exercises[exIdx].sets[sIdx]) {
+                editingRoutine.exercises[exIdx].sets[sIdx][field] = val.toString();
+            }
+        }
+
+        function addRoutineSet(exIdx) {
+            const ex = editingRoutine.exercises[exIdx];
+            const last = ex.sets[ex.sets.length - 1] || { weight: '20', reps: '10' };
+            ex.sets.push({ weight: last.weight || '20', reps: last.reps || '10' });
+            renderRoutineEditExercises();
+        }
+
+        function removeRoutineSet(exIdx, sIdx) {
+            const ex = editingRoutine.exercises[exIdx];
+            if (ex.sets.length <= 1) {
+                alert('최소 1개의 세트가 필요합니다.');
+                return;
+            }
+            ex.sets.splice(sIdx, 1);
+            renderRoutineEditExercises();
+        }
+
+        function moveRoutineExercise(exIdx, dir) {
+            const targetIdx = exIdx + dir;
+            if (targetIdx < 0 || targetIdx >= editingRoutine.exercises.length) return;
+            const item = editingRoutine.exercises.splice(exIdx, 1)[0];
+            editingRoutine.exercises.splice(targetIdx, 0, item);
+            renderRoutineEditExercises();
+        }
+
+        function removeRoutineExercise(exIdx) {
+            editingRoutine.exercises.splice(exIdx, 1);
+            renderRoutineEditExercises();
+        }
+
+        function openRoutineExerciseAddModal() {
+            isEditingForRoutine = true;
+            replaceTargetIndex = -1;
+            document.getElementById('exercise-modal').classList.remove('hidden');
+            document.getElementById('exercise-modal').dataset.open = "true";
+            renderExerciseList();
+        }
+
+        function deleteCurrentRoutine() {
+            if (!editingRoutineId) return;
+            if (!confirm('이 루틴을 삭제하시겠습니까?')) return;
+            state.routines = state.routines.filter(r => r.id !== editingRoutineId);
+            saveData();
+            closeModal('routine-edit-modal');
+            editingRoutineId = null;
+            editingRoutine = null;
+            if (currentTab === 'workout') {
+                switchTab('workout');
+            }
+        }
+
+        function saveRoutineEdit() {
+            const name = (document.getElementById('edit-routine-name').value || '').trim();
+            if (!name) {
+                alert('루틴 이름을 입력해주세요.');
+                return;
+            }
+            if (!editingRoutine.exercises || editingRoutine.exercises.length === 0) {
+                alert('최소 1개 이상의 운동을 추가해주세요.');
+                return;
+            }
+            
+            editingRoutine.name = name;
+            
+            if (editingRoutineId) {
+                const idx = state.routines.findIndex(r => r.id === editingRoutineId);
+                if (idx > -1) {
+                    state.routines[idx] = editingRoutine;
+                } else {
+                    state.routines.push(editingRoutine);
+                }
+            } else {
+                state.routines.push(editingRoutine);
+            }
+            
+            saveData();
+            closeModal('routine-edit-modal');
+            editingRoutineId = null;
+            editingRoutine = null;
+            
+            if (currentTab === 'workout') {
+                switchTab('workout');
+            }
+        }
         
         // --- Added Missing Essential Functions ---
         function openExerciseModal(isReplace) { 
@@ -1613,6 +1778,18 @@
 
         function selectExercise(name) {
             const dbEx = exerciseDB.find(e => e.name === name);
+            if (isEditingForRoutine) {
+                const defaultSets = [{ weight: '20', reps: '10' }, { weight: '20', reps: '10' }, { weight: '20', reps: '10' }];
+                editingRoutine.exercises.push({
+                    name: dbEx.name,
+                    sets: defaultSets
+                });
+                isEditingForRoutine = false;
+                closeExerciseModal();
+                renderRoutineEditExercises();
+                return;
+            }
+
             const newEx = {
                 name: dbEx.name,
                 sets: [{weight:'0', reps:'0', completed: false}],
