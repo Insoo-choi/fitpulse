@@ -384,6 +384,32 @@
         </div>
     </div>
 
+    <!-- Routine Diff Sync Modal -->
+    <div id="routine-diff-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm z-[75] hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-sm flex flex-col p-6 shadow-2xl">
+            <div class="flex justify-center mb-3">
+                <div class="w-12 h-12 bg-brand-900/50 rounded-full flex items-center justify-center">
+                    <i data-lucide="git-branch" class="w-6 h-6 text-brand-400"></i>
+                </div>
+            </div>
+            <h3 class="text-lg font-black text-white text-center mb-1">루틴 변경사항 발견</h3>
+            <p class="text-xs text-slate-400 text-center mb-4">오늘 수행한 운동 구성이 원래 루틴과 다릅니다. 원래 루틴을 업데이트할까요?</p>
+            
+            <div id="routine-diff-list" class="bg-slate-800/80 rounded-2xl p-3.5 mb-5 max-h-40 overflow-y-auto no-scrollbar text-xs space-y-1.5 border border-slate-700/50">
+                <!-- Populated by JS -->
+            </div>
+            
+            <div class="flex flex-col gap-2.5">
+                <button onclick="confirmRoutineDiff(true)" class="w-full bg-brand-600 text-white font-black py-3.5 rounded-xl text-sm shadow-lg shadow-brand-500/20 active:scale-95 transition-transform">
+                    ✨ 원래 루틴에 반영하여 저장
+                </button>
+                <button onclick="confirmRoutineDiff(false)" class="w-full bg-slate-800 border border-slate-700 text-slate-300 font-bold py-3 rounded-xl text-sm active:bg-slate-700 transition-colors">
+                    📌 이번만 기록 (원래 루틴 유지)
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Change Routine Modal -->
     <div id="change-routine-modal" class="fixed inset-0 bg-black/95 backdrop-blur-sm z-[90] hidden flex flex-col">
         <div class="p-4 border-b border-slate-800 flex items-center gap-3 bg-slate-900 sticky top-0 z-10">
@@ -1448,12 +1474,87 @@
         
         function finishWorkout() {
             if(!state.activeWorkout) return;
-            const diff = Date.now() - state.activeWorkout.startTime;
-            const durationMin = Math.round(diff / 60000);
             
-            // Clean uncompleted
+            // Clean uncompleted sets
             state.activeWorkout.exercises.forEach(e => { e.sets = e.sets.filter(s => s.completed); });
             state.activeWorkout.exercises = state.activeWorkout.exercises.filter(e => e.sets.length > 0);
+            
+            if (state.activeWorkout.exercises.length === 0) {
+                alert('완료된 운동 세트가 없습니다.');
+                return;
+            }
+
+            // Check if routine has differences
+            if (state.activeWorkout.routineId) {
+                const origRoutine = state.routines.find(r => r.id === state.activeWorkout.routineId);
+                if (origRoutine) {
+                    const diffs = detectRoutineDiff(origRoutine, state.activeWorkout);
+                    if (diffs.length > 0) {
+                        showRoutineDiffModal(diffs);
+                        return;
+                    }
+                }
+            }
+            
+            finalizeWorkout();
+        }
+
+        function detectRoutineDiff(orig, current) {
+            const diffs = [];
+            const origNames = orig.exercises.map(e => e.name);
+            const currNames = current.exercises.map(e => e.name);
+            
+            // Check added exercises
+            currNames.forEach(name => {
+                if (!origNames.includes(name)) {
+                    diffs.push(`➕ <span class="text-emerald-400 font-bold">${name}</span> 종목 추가됨`);
+                }
+            });
+            
+            // Check removed exercises
+            origNames.forEach(name => {
+                if (!currNames.includes(name)) {
+                    diffs.push(`➖ <span class="text-rose-400 font-bold">${name}</span> 종목 제외됨`);
+                }
+            });
+            
+            // Check set count / weights for common exercises
+            current.exercises.forEach(currEx => {
+                const origEx = orig.exercises.find(e => e.name === currEx.name);
+                if (origEx) {
+                    if (origEx.sets.length !== currEx.sets.length) {
+                        diffs.push(`🔄 ${currEx.name}: 세트 수 변경 (${origEx.sets.length}세트 → ${currEx.sets.length}세트)`);
+                    }
+                }
+            });
+            
+            return diffs;
+        }
+
+        function showRoutineDiffModal(diffs) {
+            const container = document.getElementById('routine-diff-list');
+            container.innerHTML = diffs.map(d => `<div class="py-1 border-b border-slate-700/30 last:border-none">${d}</div>`).join('');
+            document.getElementById('routine-diff-modal').classList.remove('hidden');
+        }
+
+        function confirmRoutineDiff(updateOriginal) {
+            if (updateOriginal && state.activeWorkout.routineId) {
+                const origRoutine = state.routines.find(r => r.id === state.activeWorkout.routineId);
+                if (origRoutine) {
+                    origRoutine.exercises = state.activeWorkout.exercises.map(e => ({
+                        name: e.name,
+                        sets: e.sets.map(s => ({ weight: s.weight, reps: s.reps }))
+                    }));
+                    saveData();
+                }
+            }
+            closeModal('routine-diff-modal');
+            finalizeWorkout();
+        }
+
+        function finalizeWorkout() {
+            const diff = Date.now() - state.activeWorkout.startTime;
+            const durationMin = Math.round(diff / 60000);
             
             let tVol = 0, tSets = 0, tReps = 0;
             state.activeWorkout.exercises.forEach(e => {
