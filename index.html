@@ -1457,9 +1457,14 @@
             lastFinishedWorkout = record;
             saveData();
             
-            // Calc stats
-            const kcal = Math.round(durationMin * 6.5);
+            // Calc stats based on dynamic MET & user bodyweight
+            const userWeight = parseFloat(state.bodyWeight) || 70;
+            const volPerMin = durationMin > 0 ? (tVol / durationMin) : 0;
+            const dynamicMET = durationMin > 0 ? Math.min(Math.max(3.5, 3.5 + (volPerMin / 150) * 2.5), 8.0) : 4.0;
+            const kcal = Math.round(dynamicMET * userWeight * (Math.max(durationMin, 1) / 60));
             const intensity = durationMin > 0 ? Math.round(tVol / durationMin) : 0;
+            record.calories = kcal;
+            saveData();
             
             // Draw Summary UI
             document.getElementById('sum-count').innerHTML = `${state.workoutCount}<span class="text-sm text-slate-400 font-normal">th</span>`;
