@@ -257,6 +257,34 @@
         </div>
     </div>
 
+    <!-- Routine Paste Modal -->
+    <div id="routine-paste-modal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-[65] hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-md flex flex-col p-5 shadow-2xl max-h-[90vh] overflow-y-auto no-scrollbar">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="text-lg font-black text-white flex items-center gap-2"><i data-lucide="clipboard-paste" class="w-5 h-5 text-brand-400"></i> 루틴 붙여넣기</h3>
+                <button onclick="closeModal('routine-paste-modal')" class="text-slate-400 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <p class="text-xs text-slate-400 mb-3">메모장, 카톡, 유튜브 루틴 텍스트를 그대로 붙여넣으세요. AI가 자동으로 종목, 세트, 무게, 횟수를 추출합니다.</p>
+            
+            <div class="mb-3">
+                <input type="text" id="paste-routine-name" placeholder="루틴 이름 (비워두면 자동 설정)" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white text-sm font-bold outline-none focus:border-brand-500">
+            </div>
+            
+            <div class="mb-4">
+                <textarea id="paste-routine-text" rows="7" placeholder="예시:&#10;벤치프레스 60kg 8회 3세트&#10;인클라인 덤벨 프레스 20kg 10회 3세트&#10;풀업 10회 3세트&#10;사이드 레터럴 레이즈 10kg 15회 4세트" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-xs leading-relaxed outline-none focus:border-brand-500 font-mono"></textarea>
+            </div>
+            
+            <div class="flex flex-col gap-2">
+                <button onclick="processPastedRoutine(true)" class="w-full bg-brand-600 text-white font-black py-3.5 rounded-xl text-sm shadow-lg shadow-brand-500/20 active:scale-95 transition-transform flex items-center justify-center gap-2">
+                    <i data-lucide="play" class="w-4 h-4 fill-white"></i> 이 루틴으로 바로 운동 시작
+                </button>
+                <button onclick="processPastedRoutine(false)" class="w-full bg-slate-800 border border-slate-700 text-slate-200 font-bold py-3 rounded-xl text-sm active:bg-slate-700 transition-colors">
+                    루틴 목록에만 저장
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Summary Modal (Result) -->
     <div id="summary-modal" class="fixed inset-0 bg-black/95 backdrop-blur-md z-[70] hidden flex flex-col p-4 overflow-y-auto no-scrollbar pb-24">
         <div class="flex justify-end pt-4">
@@ -1577,7 +1605,127 @@
         }
 
         // --- Routine CRUD Implementation ---
-        function openRoutinePasteModal() { alert("붙여넣기 기능은 전체 코드 최적화 중 제외되었습니다."); }
+        function openRoutinePasteModal() {
+            document.getElementById('paste-routine-name').value = '';
+            document.getElementById('paste-routine-text').value = '';
+            document.getElementById('routine-paste-modal').classList.remove('hidden');
+        }
+
+        function parseRoutineText(text, fallbackName) {
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            if (lines.length === 0) return null;
+            
+            let routineName = fallbackName || '';
+            const exercises = [];
+            
+            lines.forEach((line) => {
+                // Check if title line like [월요일 상체] or # 상체 루틴
+                const titleMatch = line.match(/^\[(.*?)\]|^#+\s*(.*?)$|^===(.*?)===/);
+                if (titleMatch && !routineName) {
+                    routineName = (titleMatch[1] || titleMatch[2] || titleMatch[3] || '').trim();
+                    return;
+                }
+                
+                // Clean leading numbers like "1.", "1)", "-", "*"
+                let cleanLine = line.replace(/^[\d\.\)\-\*•\s]+/, '').trim();
+                
+                // Extract weights: 60kg, 60.5kg, 60k
+                let weight = '0';
+                const weightMatch = cleanLine.match(/(\d+(?:\.\d+)?)\s*(?:kg|k|키로)/i);
+                if (weightMatch) {
+                    weight = weightMatch[1];
+                }
+                
+                // Extract reps: 8회, 8reps, 8rep, 8r, x8
+                let reps = '10';
+                const repsMatch = cleanLine.match(/(\d+)\s*(?:회|reps?|r)\b/i) || cleanLine.match(/(?:x|X|\*)\s*(\d+)/);
+                if (repsMatch) {
+                    reps = repsMatch[1];
+                }
+                
+                // Extract sets: 3세트, 3sets, 3set, 3s
+                let setsCount = 3;
+                const setsMatch = cleanLine.match(/(\d+)\s*(?:세트|sets?|s)\b/i);
+                if (setsMatch) {
+                    setsCount = parseInt(setsMatch[1]) || 3;
+                } else {
+                    const setRepMatch = cleanLine.match(/(\d+)\s*(?:x|X|\*)\s*(\d+)/);
+                    if (setRepMatch) {
+                        setsCount = parseInt(setRepMatch[1]) || 3;
+                        reps = setRepMatch[2];
+                    }
+                }
+                
+                // Remove parsed numbers to isolate exercise name
+                let exName = cleanLine
+                    .replace(/(\d+(?:\.\d+)?)\s*(?:kg|k|키로)/gi, '')
+                    .replace(/(\d+)\s*(?:세트|sets?|s)/gi, '')
+                    .replace(/(\d+)\s*(?:회|reps?|r)/gi, '')
+                    .replace(/(?:x|X|\*)\s*\d+/g, '')
+                    .replace(/[:\-,\/]/g, '')
+                    .trim();
+                
+                if (!exName) return;
+                
+                // Match with known exercises in exerciseDB if possible
+                const matchedDB = exerciseDB.find(e => e.name.toLowerCase() === exName.toLowerCase() || e.name.includes(exName) || exName.includes(e.name));
+                const finalName = matchedDB ? matchedDB.name : exName;
+                
+                // If not in DB, add it as custom exercise
+                if (!matchedDB && !exerciseDB.some(e => e.name === finalName)) {
+                    exerciseDB.push({ name: finalName, category: '가슴', type: getExerciseCategory(finalName) });
+                }
+                
+                const sets = [];
+                for (let s = 0; s < Math.min(Math.max(setsCount, 1), 10); s++) {
+                    sets.push({ weight: weight, reps: reps });
+                }
+                
+                exercises.push({
+                    name: finalName,
+                    sets: sets
+                });
+            });
+            
+            if (exercises.length === 0) return null;
+            if (!routineName) {
+                const now = new Date();
+                routineName = '붙여넣은 루틴 ' + (now.getMonth() + 1) + '/' + now.getDate();
+            }
+            
+            return {
+                id: 'routine_' + Date.now(),
+                name: routineName,
+                exercises: exercises
+            };
+        }
+
+        function processPastedRoutine(startNow) {
+            const text = (document.getElementById('paste-routine-text').value || '').trim();
+            const customName = (document.getElementById('paste-routine-name').value || '').trim();
+            
+            if (!text) {
+                alert('붙여넣을 텍스트를 입력해주세요.');
+                return;
+            }
+            
+            const routine = parseRoutineText(text, customName);
+            if (!routine || routine.exercises.length === 0) {
+                alert('운동 종목을 인식하지 못했습니다. 한 줄에 하나씩 운동명을 입력해주세요.');
+                return;
+            }
+            
+            state.routines.unshift(routine);
+            saveData();
+            closeModal('routine-paste-modal');
+            
+            if (startNow) {
+                startWorkout(routine.id);
+            } else {
+                alert(`✅ '${routine.name}' (${routine.exercises.length}개 종목)이 루틴 목록에 저장되었습니다!`);
+                if (currentTab === 'workout') switchTab('workout');
+            }
+        }
         
         function createNewRoutine() {
             editingRoutineId = null;
