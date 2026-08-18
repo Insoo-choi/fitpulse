@@ -1042,7 +1042,7 @@
         // Touch Drag Implementation (Virtual Bounding Box)
         let activeClone = null;
         let initialY = 0;
-        let currentY = 0;
+        let initialCloneTop = 0;
         let originalCard = null;
 
         function handleTouchStart(e) {
@@ -1055,9 +1055,10 @@
             initialY = touch.clientY;
             
             const rect = originalCard.getBoundingClientRect();
+            initialCloneTop = rect.top;
             activeClone = originalCard.cloneNode(true);
             activeClone.style.position = 'fixed';
-            activeClone.style.top = rect.top + 'px';
+            activeClone.style.top = initialCloneTop + 'px';
             activeClone.style.left = rect.left + 'px';
             activeClone.style.width = rect.width + 'px';
             activeClone.style.zIndex = '9999';
@@ -1074,8 +1075,7 @@
             
             const touch = e.touches[0];
             const deltaY = touch.clientY - initialY;
-            const rect = originalCard.getBoundingClientRect();
-            activeClone.style.top = (rect.top + deltaY) + 'px';
+            activeClone.style.top = (initialCloneTop + deltaY) + 'px';
             
             // Auto scroll detection
             const scrollY = window.scrollY;
