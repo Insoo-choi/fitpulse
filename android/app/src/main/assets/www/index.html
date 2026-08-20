@@ -144,13 +144,16 @@
 
     <!-- Edit Set Modal (Compact Keypad style) -->
     <div id="set-edit-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] hidden flex items-end sm:items-center justify-center">
-        <div class="bg-slate-900 w-full sm:w-80 rounded-t-3xl sm:rounded-3xl p-5 border-t sm:border border-slate-700 shadow-2xl flex flex-col pb-8 sm:pb-5">
+        <div class="bg-slate-900 w-full sm:w-88 rounded-t-3xl sm:rounded-3xl p-5 border-t sm:border border-slate-700 shadow-2xl flex flex-col pb-8 sm:pb-5">
             <div class="flex justify-between items-center mb-6">
-                <h3 class="text-lg font-bold text-white" id="edit-set-title">세트 수정</h3>
+                <div>
+                    <h3 class="text-lg font-bold text-white" id="edit-set-title">세트 수정</h3>
+                    <p class="text-xs text-brand-400 font-bold mt-0.5" id="edit-set-subtitle">1세트</p>
+                </div>
                 <button onclick="closeModal('set-edit-modal')" class="text-slate-400 p-1"><i data-lucide="x" class="w-6 h-6"></i></button>
             </div>
             
-            <div class="flex items-center gap-4 mb-8">
+            <div class="flex items-center gap-4 mb-6">
                 <div class="flex-1">
                     <label class="block text-xs text-slate-400 mb-1 text-center font-bold">무게 (kg)</label>
                     <div class="flex items-center justify-center gap-1 sm:gap-2 bg-slate-800 p-2 rounded-xl">
@@ -181,7 +184,79 @@
                 </div>
             </div>
             
-            <button onclick="saveSetEdit()" class="w-full bg-brand-600 text-white font-bold py-4 rounded-xl text-lg active:bg-brand-500 shadow-lg shadow-brand-500/20 transition-colors">적용하기</button>
+            <div class="flex flex-col gap-2">
+                <button onclick="saveAndCompleteSet(false)" id="btn-save-complete-set" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 rounded-xl text-base shadow-lg shadow-emerald-500/20 active:scale-95 transition-all flex items-center justify-center gap-2">
+                    <i data-lucide="check-circle" class="w-5 h-5"></i> <span id="btn-save-complete-text">세트 완료 및 저장</span>
+                </button>
+                <div class="grid grid-cols-2 gap-2" id="sub-edit-buttons">
+                    <button onclick="saveSetEdit(false)" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold py-3 rounded-xl text-xs active:scale-95 transition-all">
+                        수정만 저장
+                    </button>
+                    <button onclick="saveSetEdit(true)" id="btn-apply-subsequent-sets" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold py-3 rounded-xl text-xs active:scale-95 transition-all flex items-center justify-center gap-1">
+                        <i data-lucide="chevrons-down" class="w-3.5 h-3.5 text-brand-400"></i> 이후 세트 통일
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Exercise History Modal -->
+    <div id="exercise-history-modal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-[65] hidden flex flex-col justify-end sm:items-center sm:justify-center">
+        <div class="bg-slate-900 w-full sm:w-[460px] h-[85vh] sm:h-[650px] rounded-t-3xl sm:rounded-3xl border-t sm:border border-slate-700 flex flex-col shadow-2xl overflow-hidden">
+            <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900 z-10 shrink-0">
+                <div class="flex items-center gap-2 min-w-0 pr-2">
+                    <div class="w-8 h-8 rounded-lg bg-brand-900/50 flex items-center justify-center text-brand-400 shrink-0">
+                        <i data-lucide="history" class="w-4 h-4"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <h3 class="font-black text-white text-base truncate" id="ex-history-title">운동 기록</h3>
+                        <p class="text-[10px] text-slate-400 font-bold" id="ex-history-subtitle">과거 수행 내역</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('exercise-history-modal')" class="text-slate-400 p-1 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-4 space-y-3" id="ex-history-list">
+                <!-- Rendered by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Daily Weight Check Modal -->
+    <div id="daily-weight-modal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-[70] hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 w-full max-w-sm flex flex-col shadow-2xl">
+            <div class="flex justify-center mb-3">
+                <div class="w-12 h-12 bg-emerald-900/40 border border-emerald-700/50 rounded-2xl flex items-center justify-center text-emerald-400">
+                    <i data-lucide="scale" class="w-6 h-6"></i>
+                </div>
+            </div>
+            <h3 class="text-xl font-black text-white text-center mb-1">오늘의 체중 기록</h3>
+            <p class="text-slate-400 text-xs text-center mb-6">체중을 기록하면 칼로리 소모량과 변화 추이가 더 정확해집니다.</p>
+            
+            <div class="bg-slate-800/80 rounded-2xl p-4 border border-slate-700/60 mb-5 text-center">
+                <label class="block text-[11px] font-bold text-slate-400 mb-2">현재 몸무게 (kg)</label>
+                <div class="flex items-center justify-center gap-2 mb-3">
+                    <input type="number" id="daily-weight-input" step="0.1" inputmode="decimal" class="w-28 bg-slate-900/80 border border-slate-700 focus:border-emerald-500 rounded-xl py-2.5 text-center text-3xl font-black text-white outline-none">
+                    <span class="text-slate-400 font-bold text-lg">kg</span>
+                </div>
+                <div class="grid grid-cols-6 gap-1">
+                    <button onclick="adjustDailyWeight(-1.0)" class="py-1.5 rounded-lg bg-slate-700 text-slate-300 font-bold text-xs active:bg-slate-600">-1</button>
+                    <button onclick="adjustDailyWeight(-0.5)" class="py-1.5 rounded-lg bg-slate-700 text-slate-300 font-bold text-xs active:bg-slate-600">-0.5</button>
+                    <button onclick="adjustDailyWeight(-0.1)" class="py-1.5 rounded-lg bg-slate-700 text-slate-300 font-bold text-xs active:bg-slate-600">-0.1</button>
+                    <button onclick="adjustDailyWeight(0.1)" class="py-1.5 rounded-lg bg-slate-700 text-slate-300 font-bold text-xs active:bg-slate-600">+0.1</button>
+                    <button onclick="adjustDailyWeight(0.5)" class="py-1.5 rounded-lg bg-slate-700 text-slate-300 font-bold text-xs active:bg-slate-600">+0.5</button>
+                    <button onclick="adjustDailyWeight(1.0)" class="py-1.5 rounded-lg bg-slate-700 text-slate-300 font-bold text-xs active:bg-slate-600">+1</button>
+                </div>
+            </div>
+            
+            <div class="flex flex-col gap-2">
+                <button onclick="saveDailyWeight()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 rounded-xl text-base shadow-lg shadow-emerald-500/20 active:scale-95 transition-all">
+                    오늘 체중 저장
+                </button>
+                <button onclick="dismissDailyWeight()" class="w-full py-2.5 text-slate-400 hover:text-slate-200 text-xs font-bold active:scale-95 transition-all">
+                    다음에 하기
+                </button>
+            </div>
         </div>
     </div>
 
@@ -238,6 +313,34 @@
                 <button onclick="openRoutineExerciseAddModal()" class="w-full py-3 border-2 border-dashed border-slate-600 text-slate-400 hover:text-white font-bold rounded-xl active:bg-slate-800 transition-colors flex items-center justify-center gap-2">
                     <i data-lucide="plus" class="w-4 h-4"></i> 종목 추가하기
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Routine Management Modal -->
+    <div id="routine-manage-modal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-[60] hidden flex flex-col justify-end">
+        <div class="bg-slate-900 w-full h-[90vh] rounded-t-3xl border-t border-slate-700 flex flex-col pb-safe relative">
+            <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900 rounded-t-3xl z-10">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-brand-900/50 flex items-center justify-center text-brand-400">
+                        <i data-lucide="folder-kanban" class="w-5 h-5"></i>
+                    </div>
+                    <h3 class="font-black text-white text-lg">루틴 관리</h3>
+                </div>
+                <button onclick="closeModal('routine-manage-modal')" class="text-slate-400 p-1 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            
+            <div class="p-4 bg-slate-900 border-b border-slate-800 grid grid-cols-2 gap-2 z-10">
+                <button onclick="createNewRoutineFromManage()" class="bg-brand-600 hover:bg-brand-500 text-white font-bold py-3 px-3 rounded-2xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-brand-600/20 active:scale-95 transition-all">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i> + 새 루틴 만들기
+                </button>
+                <button onclick="openRoutinePasteFromManage()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold py-3 px-3 rounded-2xl text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all">
+                    <i data-lucide="clipboard-paste" class="w-4 h-4 text-brand-400"></i> 루틴 붙여넣기
+                </button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-4 space-y-3" id="routine-manage-list">
+                <!-- Rendered by JS -->
             </div>
         </div>
     </div>

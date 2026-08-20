@@ -1,0 +1,18 @@
+{
+  "name": "fitpulse",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Scientific Workout Tracker & Progressive Overload App",
+  "main": "index.html",
+  "scripts": {
+    "test": "node --test test/**/*.test.js"
+  },
+  "keywords": [
+    "fitness",
+    "workout",
+    "progressive-overload",
+    "hypertrophy"
+  ],
+  "author": "FitPulse Team",
+  "license": "MIT"
+}

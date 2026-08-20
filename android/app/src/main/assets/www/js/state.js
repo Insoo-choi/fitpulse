@@ -57,7 +57,11 @@ function loadData() {
     if (savedActive) {
         try {
             state.activeWorkout = JSON.parse(savedActive);
-        } catch (e) {}
+        } catch (e) {
+            state.activeWorkout = null;
+        }
+    } else {
+        state.activeWorkout = null;
     }
 
     const savedDB = localStorage.getItem(EXERCISE_DB_KEY);
@@ -80,11 +84,17 @@ function saveData() {
     localStorage.setItem(EXERCISE_DB_KEY, JSON.stringify(exerciseDB));
     if (state.activeWorkout) {
         localStorage.setItem('fitpulse_active', JSON.stringify(state.activeWorkout));
+    } else {
+        localStorage.removeItem('fitpulse_active');
     }
 }
 
 function saveActiveWorkout() {
-    localStorage.setItem('fitpulse_active', JSON.stringify(state.activeWorkout));
+    if (state.activeWorkout) {
+        localStorage.setItem('fitpulse_active', JSON.stringify(state.activeWorkout));
+    } else {
+        localStorage.removeItem('fitpulse_active');
+    }
 }
 
 function saveRestTimerState() {

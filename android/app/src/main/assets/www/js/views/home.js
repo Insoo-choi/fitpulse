@@ -34,12 +34,12 @@ function renderHomeView() {
                     <h3 class="text-white font-black text-lg">운동 시작</h3>
                     <p class="text-brand-200 text-xs mt-1 font-bold">루틴 또는 자율운동</p>
                 </button>
-                <button onclick="openRoutinePasteModal()" class="bg-slate-800 rounded-3xl p-5 text-left border border-slate-700 active:scale-95 transition-transform">
+                <button onclick="openRoutineManageModal()" class="bg-slate-800 rounded-3xl p-5 text-left border border-slate-700 active:scale-95 transition-transform">
                     <div class="bg-slate-700 w-10 h-10 rounded-xl flex items-center justify-center mb-4">
-                        <i data-lucide="clipboard-paste" class="text-slate-300 w-5 h-5"></i>
+                        <i data-lucide="folder-kanban" class="text-slate-300 w-5 h-5"></i>
                     </div>
-                    <h3 class="text-white font-black text-lg">루틴 붙여넣기</h3>
-                    <p class="text-slate-400 text-xs mt-1 font-bold">복사한 텍스트로 시작</p>
+                    <h3 class="text-white font-black text-lg">루틴 관리</h3>
+                    <p class="text-slate-400 text-xs mt-1 font-bold">생성 · 수정 · 붙여넣기</p>
                 </button>
             </div>
         </div>

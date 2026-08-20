@@ -1,5 +1,13 @@
 // --- Utilities, Classification & Clipboard ---
 
+function getTodayDateString(dateObj = new Date()) {
+    const d = new Date(dateObj);
+    const year = d.getFullYear();
+    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+    const day = d.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
 function getExerciseCategory(name, manualType) {
     if (manualType) return manualType;
     const n = name.toLowerCase();

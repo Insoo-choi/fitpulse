@@ -1,10 +1,30 @@
 // --- Utilities, Classification & Clipboard ---
 
+function getTodayDateString(dateObj = new Date()) {
+    const d = new Date(dateObj);
+    const year = d.getFullYear();
+    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+    const day = d.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
 function getExerciseCategory(name, manualType) {
     if (manualType) return manualType;
     const n = name.toLowerCase();
-    if (n.includes('스쿼트') || n.includes('데드') || n.includes('레그프레스')) return 'large_compound';
-    if (n.includes('벤치') || n.includes('프레스') || n.includes('로우') || n.includes('풀다운') || n.includes('풀업') || n.includes('딥스')) return 'upper_compound';
+    
+    // 1. 대근육 복합 (하체 및 전신 대관절)
+    if (n.includes('스쿼트') || n.includes('데드리프트') || n.includes('데드') || n.includes('레그프레스') || n.includes('레그 프레스') || n.includes('런지') || n.includes('스플릿') || n.includes('힙 쓰러스트') || n.includes('힙쓰러스트') || n.includes('랙풀') || n.includes('rdl')) {
+        return 'large_compound';
+    }
+    
+    // 2. 상체 다관절 복합
+    if (!n.includes('플라이') && !n.includes('레이즈') && !n.includes('컬') && !n.includes('익스텐션') && !n.includes('푸시다운') && !n.includes('킥백')) {
+        if (n.includes('벤치') || n.includes('프레스') || n.includes('ohp') || n.includes('로우') || n.includes('풀다운') || n.includes('풀인') || n.includes('풀업') || n.includes('턱걸이') || n.includes('친업') || n.includes('딥스') || n.includes('푸시업')) {
+            return 'upper_compound';
+        }
+    }
+    
+    // 3. 소근육 및 고립 운동
     return 'isolation';
 }
 

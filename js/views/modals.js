@@ -404,6 +404,7 @@ function openRoutinePasteModal() {
 }
 
 function parseRoutineText(text, fallbackName) {
+    if (!text || typeof text !== 'string') return null;
     const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
     if (lines.length === 0) return null;
     
@@ -411,49 +412,63 @@ function parseRoutineText(text, fallbackName) {
     const exercises = [];
     
     lines.forEach((line) => {
-        const titleMatch = line.match(/^\[(.*?)\]|^#+\s*(.*?)$|^===(.*?)===/);
+        const titleMatch = line.match(/^\[(.*?)\]|^#+\s*(.*?)$|^===(.*?)===|^【(.*?)】/);
         if (titleMatch && !routineName) {
-            routineName = (titleMatch[1] || titleMatch[2] || titleMatch[3] || '').trim();
+            routineName = (titleMatch[1] || titleMatch[2] || titleMatch[3] || titleMatch[4] || '').trim();
             return;
         }
         
         let cleanLine = line.replace(/^[\d\.\)\-\*•\s]+/, '').trim();
+        if (!cleanLine || cleanLine.startsWith('//') || cleanLine.startsWith('/*')) return;
         
         let weight = '0';
-        const weightMatch = cleanLine.match(/(\d+(?:\.\d+)?)\s*(?:kg|k|키로)/i);
+        const weightMatch = cleanLine.match(/(\d+(?:\.\d+)?)\s*(?:kg|k|키로|킬로)/i);
         if (weightMatch) {
             weight = weightMatch[1];
         }
         
         let reps = '10';
-        const repsMatch = cleanLine.match(/(\d+)\s*(?:회|reps?|r)\b/i) || cleanLine.match(/(?:x|X|\*)\s*(\d+)/);
-        if (repsMatch) {
-            reps = repsMatch[1];
-        }
-        
         let setsCount = 3;
-        const setsMatch = cleanLine.match(/(\d+)\s*(?:세트|sets?|s)\b/i);
-        if (setsMatch) {
-            setsCount = parseInt(setsMatch[1]) || 3;
+        
+        // 패턴 1: 10회 3세트
+        const repSetMatch = cleanLine.match(/(\d+)\s*(?:회|reps?|r)\s*(\d+)\s*(?:세트|sets?|s)/i);
+        // 패턴 2: 3세트 10회
+        const setRepMatch = cleanLine.match(/(\d+)\s*(?:세트|sets?|s)\s*(\d+)\s*(?:회|reps?|r)/i);
+        // 패턴 3: 10x3 또는 10*3 또는 10×3 (횟수 x 세트수)
+        const multMatch = cleanLine.match(/(\d+)\s*(?:x|X|\*|×)\s*(\d+)/);
+        
+        if (repSetMatch) {
+            reps = repSetMatch[1];
+            setsCount = parseInt(repSetMatch[2]) || 3;
+        } else if (setRepMatch) {
+            setsCount = parseInt(setRepMatch[1]) || 3;
+            reps = setRepMatch[2];
+        } else if (multMatch) {
+            reps = multMatch[1];
+            setsCount = parseInt(multMatch[2]) || 3;
         } else {
-            const setRepMatch = cleanLine.match(/(\d+)\s*(?:x|X|\*)\s*(\d+)/);
-            if (setRepMatch) {
-                setsCount = parseInt(setRepMatch[1]) || 3;
-                reps = setRepMatch[2];
-            }
+            const singleRep = cleanLine.match(/(\d+)\s*(?:회|reps?|r)/i);
+            const singleSet = cleanLine.match(/(\d+)\s*(?:세트|sets?|s)/i);
+            if (singleRep) reps = singleRep[1];
+            if (singleSet) setsCount = parseInt(singleSet[1]) || 3;
         }
         
         let exName = cleanLine
-            .replace(/(\d+(?:\.\d+)?)\s*(?:kg|k|키로)/gi, '')
+            .replace(/(\d+(?:\.\d+)?)\s*(?:kg|k|키로|킬로)/gi, '')
             .replace(/(\d+)\s*(?:세트|sets?|s)/gi, '')
             .replace(/(\d+)\s*(?:회|reps?|r)/gi, '')
-            .replace(/(?:x|X|\*)\s*\d+/g, '')
-            .replace(/[:\-,\/]/g, '')
+            .replace(/(?:x|X|\*|×)\s*\d+/g, '')
+            .replace(/[:\-,\/|]/g, '')
             .trim();
         
-        if (!exName) return;
+        if (!exName || exName.length < 2) return;
         
-        const matchedDB = exerciseDB.find(e => e.name.toLowerCase() === exName.toLowerCase() || e.name.includes(exName) || exName.includes(e.name));
+        const cleanExNameForSearch = exName.replace(/\s+/g, '').toLowerCase();
+        const matchedDB = exerciseDB.find(e => {
+            const dbClean = e.name.replace(/\s+/g, '').toLowerCase();
+            return dbClean === cleanExNameForSearch || dbClean.includes(cleanExNameForSearch) || cleanExNameForSearch.includes(dbClean);
+        });
+        
         const finalName = matchedDB ? matchedDB.name : exName;
         
         if (!matchedDB && !exerciseDB.some(e => e.name === finalName)) {
@@ -461,7 +476,7 @@ function parseRoutineText(text, fallbackName) {
         }
         
         const sets = [];
-        for (let s = 0; s < Math.min(Math.max(setsCount, 1), 10); s++) {
+        for (let s = 0; s < Math.min(Math.max(setsCount, 1), 15); s++) {
             sets.push({ weight: weight, reps: reps });
         }
         
@@ -473,8 +488,8 @@ function parseRoutineText(text, fallbackName) {
     
     if (exercises.length === 0) return null;
     if (!routineName) {
-        const now = new Date();
-        routineName = '붙여넣은 루틴 ' + (now.getMonth() + 1) + '/' + now.getDate();
+        const todayStr = typeof getTodayDateString === 'function' ? getTodayDateString() : new Date().toISOString().slice(0, 10);
+        routineName = `붙여넣은 루틴 (${todayStr.slice(5)})`;
     }
     
     return {
@@ -540,7 +555,7 @@ function saveDailyWeight() {
     
     state.bodyWeight = newWeight;
     
-    const today = new Date().toISOString().slice(0, 10);
+    const today = typeof getTodayDateString === 'function' ? getTodayDateString() : new Date().toISOString().slice(0, 10);
     if (!state.weightHistory) state.weightHistory = [];
     const wIdx = state.weightHistory.findIndex(w => w.date === today);
     if (wIdx > -1) {
@@ -559,7 +574,7 @@ function saveDailyWeight() {
 }
 
 function dismissDailyWeight() {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = typeof getTodayDateString === 'function' ? getTodayDateString() : new Date().toISOString().slice(0, 10);
     localStorage.setItem('fitpulse_weight_dismissed_date', today);
     closeModal('daily-weight-modal');
 }

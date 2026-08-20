@@ -638,8 +638,7 @@ function finalizeWorkout() {
         });
     });
     
-    const tzoffset = (new Date()).getTimezoneOffset() * 60000;
-    const localISOTime = (new Date(Date.now() - tzoffset)).toISOString().slice(0, 10);
+    const localISOTime = typeof getTodayDateString === 'function' ? getTodayDateString() : new Date().toISOString().slice(0, 10);
     
     const record = {
         id: state.activeWorkout.id,

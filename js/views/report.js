@@ -113,17 +113,29 @@ function saveProfileSettings() {
     const weightEl = document.getElementById('user-weight');
     const incEl = document.getElementById('user-min-inc');
     
-    if (heightEl) state.height = parseFloat(heightEl.value) || state.height;
-    const newWeight = weightEl ? (parseFloat(weightEl.value) || state.bodyWeight) : state.bodyWeight;
-    state.bodyWeight = newWeight;
-    if (incEl) state.minIncrement = parseFloat(incEl.value) || 2.5;
+    if (heightEl) {
+        const h = parseFloat(heightEl.value);
+        if (!isNaN(h) && h >= 50 && h <= 250) state.height = h;
+    }
     
-    const today = new Date().toISOString().slice(0, 10);
-    const wIdx = state.weightHistory.findIndex(w => w.date === today);
-    if(wIdx > -1) state.weightHistory[wIdx].weight = newWeight;
-    else state.weightHistory.push({date: today, weight: newWeight});
+    if (weightEl) {
+        const w = parseFloat(weightEl.value);
+        if (!isNaN(w) && w >= 20 && w <= 300) {
+            state.bodyWeight = w;
+            const today = typeof getTodayDateString === 'function' ? getTodayDateString() : new Date().toISOString().slice(0, 10);
+            if (!state.weightHistory) state.weightHistory = [];
+            const wIdx = state.weightHistory.findIndex(entry => entry.date === today);
+            if (wIdx > -1) state.weightHistory[wIdx].weight = w;
+            else state.weightHistory.push({ date: today, weight: w });
+        }
+    }
+    
+    if (incEl) {
+        const inc = parseFloat(incEl.value);
+        if (!isNaN(inc) && inc >= 0.25 && inc <= 20) state.minIncrement = inc;
+    }
     
     saveData();
     const selector = document.getElementById('chart-type-selector');
-    if(selector && selector.value === 'weight') renderCharts();
+    if (selector && selector.value === 'weight') renderCharts();
 }

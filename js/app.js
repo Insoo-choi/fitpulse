@@ -15,7 +15,7 @@ window.onload = () => {
 };
 
 function checkDailyWeightPrompt() {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = typeof getTodayDateString === 'function' ? getTodayDateString() : new Date().toISOString().slice(0, 10);
     const hasTodayRecord = (state.weightHistory || []).some(w => w.date === today);
     const dismissedDate = localStorage.getItem('fitpulse_weight_dismissed_date');
     
