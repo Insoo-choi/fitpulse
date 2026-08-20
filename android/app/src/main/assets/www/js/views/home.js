@@ -147,32 +147,125 @@ function showDateInfo(dateStr) {
             }
         }).join('');
     } else {
-        wInfo = '<p class="text-slate-400 text-sm text-center my-4">기록된 운동이 없습니다.</p>';
-    }
+    const proteinData = typeof getDailyProteinData === 'function' ? getDailyProteinData(dateStr) : { total: 0, target: 126, percentage: 0, logs: [] };
     
+    let proteinLogsHtml = '';
+    if (proteinData.logs.length > 0) {
+        proteinLogsHtml = `
+            <div class="mt-2.5 pt-2 border-t border-slate-700/60 space-y-1.5 max-h-24 overflow-y-auto no-scrollbar">
+                ${proteinData.logs.map(log => `
+                    <div class="flex items-center justify-between text-[11px] bg-slate-900/60 px-2 py-1 rounded-lg">
+                        <span class="text-slate-300 font-bold"><span class="text-amber-400 font-black">+${log.amount}g</span> ${log.note ? `(${log.note})` : ''} <span class="text-slate-500 text-[9px] ml-1">${log.time}</span></span>
+                        <button onclick="handleRemoveProtein('${dateStr}', '${log.id}')" class="text-slate-500 hover:text-rose-400 p-0.5"><i data-lucide="x" class="w-3 h-3"></i></button>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+
+    const proteinCardHtml = `
+        <div class="bg-amber-950/20 border border-amber-500/30 rounded-2xl p-3.5 mb-3">
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-1.5 font-black text-xs text-amber-300">
+                    <i data-lucide="beef" class="w-4 h-4 text-amber-400"></i> 단백질 섭취량
+                </div>
+                <div class="text-xs font-black text-white">
+                    <span class="text-amber-400 text-sm">${proteinData.total}</span> <span class="text-[10px] text-slate-400 font-normal">/ ${proteinData.target}g (${proteinData.percentage}%)</span>
+                </div>
+            </div>
+            
+            <div class="h-2 bg-slate-900 rounded-full overflow-hidden mb-3 border border-slate-800">
+                <div class="h-full bg-gradient-to-r from-amber-500 to-amber-300 transition-all duration-500" style="width: ${proteinData.percentage}%"></div>
+            </div>
+
+            <!-- Quick Add Buttons -->
+            <div class="grid grid-cols-4 gap-1.5 mb-2">
+                <button onclick="handleQuickAddProtein('${dateStr}', 10, '달걀/우유')" class="py-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-bold text-[10px] rounded-lg border border-slate-700 transition-transform">
+                    +10g
+                </button>
+                <button onclick="handleQuickAddProtein('${dateStr}', 20, '프로틴 쉐이크')" class="py-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-bold text-[10px] rounded-lg border border-slate-700 transition-transform">
+                    +20g
+                </button>
+                <button onclick="handleQuickAddProtein('${dateStr}', 30, '닭가슴살 1팩')" class="py-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-bold text-[10px] rounded-lg border border-slate-700 transition-transform">
+                    +30g
+                </button>
+                <button onclick="handleQuickAddProtein('${dateStr}', 40, '고기/생선')" class="py-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-bold text-[10px] rounded-lg border border-slate-700 transition-transform">
+                    +40g
+                </button>
+            </div>
+
+            <!-- Custom Input -->
+            <div class="flex gap-1.5">
+                <input type="number" id="custom-protein-input" placeholder="직접 입력 (g)" inputmode="numeric" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-white text-xs outline-none focus:border-amber-500">
+                <button onclick="handleCustomAddProtein('${dateStr}')" class="px-3 py-1 bg-amber-600 hover:bg-amber-500 active:scale-95 text-white font-bold text-xs rounded-lg whitespace-nowrap transition-transform shadow-sm">
+                    추가
+                </button>
+            </div>
+
+            ${proteinLogsHtml}
+        </div>
+    `;
+
     const modal = document.createElement('div');
     modal.id = 'date-info-modal';
     modal.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4 fade-in';
     modal.innerHTML = `
-        <div class="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-sm flex flex-col overflow-hidden shadow-2xl">
-            <div class="p-4 border-b border-slate-800 bg-slate-900 flex justify-between items-center">
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-sm flex flex-col overflow-hidden shadow-2xl max-h-[85vh]">
+            <div class="p-4 border-b border-slate-800 bg-slate-900 flex justify-between items-center shrink-0">
                 <h3 class="font-black text-white text-lg">${dateStr} 기록</h3>
                 <button onclick="document.getElementById('date-info-modal').remove()" class="text-slate-400 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <div class="p-4 max-h-[50vh] overflow-y-auto no-scrollbar">${wInfo}</div>
-            
-            <div class="p-4 bg-slate-800/50 border-t border-slate-800">
-                <h4 class="text-xs font-bold text-blue-400 mb-3 flex items-center gap-1"><i data-lucide="activity" class="w-4 h-4"></i> 러닝 기록 추가</h4>
-                <div class="flex gap-2 mb-3">
-                    <input type="number" id="run-dist" placeholder="거리 (km)" step="0.1" inputmode="decimal" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-blue-500 transition-colors">
-                    <input type="number" id="run-time" placeholder="시간 (분)" inputmode="numeric" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-blue-500 transition-colors">
+            <div class="p-4 overflow-y-auto no-scrollbar flex-1 space-y-3">
+                ${proteinCardHtml}
+                <div>
+                    <h4 class="text-xs font-bold text-slate-400 mb-2 flex items-center gap-1"><i data-lucide="dumbbell" class="w-3.5 h-3.5 text-brand-400"></i> 완료된 운동</h4>
+                    ${wInfo}
                 </div>
-                <button onclick="saveRunningRecord('${dateStr}')" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl active:bg-blue-700 text-sm shadow-lg shadow-blue-500/20 transition-transform active:scale-95">기록 저장</button>
+            </div>
+            
+            <div class="p-4 bg-slate-800/50 border-t border-slate-800 shrink-0">
+                <h4 class="text-xs font-bold text-blue-400 mb-2.5 flex items-center gap-1"><i data-lucide="activity" class="w-3.5 h-3.5"></i> 러닝 기록 추가</h4>
+                <div class="flex gap-2 mb-2.5">
+                    <input type="number" id="run-dist" placeholder="거리 (km)" step="0.1" inputmode="decimal" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-blue-500 transition-colors">
+                    <input type="number" id="run-time" placeholder="시간 (분)" inputmode="numeric" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-blue-500 transition-colors">
+                </div>
+                <button onclick="saveRunningRecord('${dateStr}')" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl active:bg-blue-700 text-xs shadow-lg shadow-blue-500/20 transition-transform active:scale-95">기록 저장</button>
             </div>
         </div>
     `;
     document.body.appendChild(modal);
     lucide.createIcons({root: modal});
+}
+
+function handleQuickAddProtein(dateStr, amount, note) {
+    if (typeof addProteinEntry === 'function') {
+        addProteinEntry(dateStr, amount, note);
+    }
+    const oldModal = document.getElementById('date-info-modal');
+    if (oldModal) oldModal.remove();
+    showDateInfo(dateStr);
+}
+
+function handleCustomAddProtein(dateStr) {
+    const input = document.getElementById('custom-protein-input');
+    const val = parseFloat(input ? input.value : 0);
+    if (!val || val <= 0) return;
+    
+    if (typeof addProteinEntry === 'function') {
+        addProteinEntry(dateStr, val, '식사');
+    }
+    const oldModal = document.getElementById('date-info-modal');
+    if (oldModal) oldModal.remove();
+    showDateInfo(dateStr);
+}
+
+function handleRemoveProtein(dateStr, entryId) {
+    if (typeof removeProteinEntry === 'function') {
+        removeProteinEntry(dateStr, entryId);
+    }
+    const oldModal = document.getElementById('date-info-modal');
+    if (oldModal) oldModal.remove();
+    showDateInfo(dateStr);
 }
 
 function removeWorkoutRecord(workoutId, dateStr) {

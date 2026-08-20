@@ -293,6 +293,89 @@ function deleteWorkoutHistory(workoutId) {
     return true;
 }
 
+// --- Daily Protein Tracker ---
+function getDailyProteinData(dateStr = (typeof getTodayDateString === 'function' ? getTodayDateString() : new Date().toISOString().slice(0, 10))) {
+    if (!state) return { target: 126, total: 0, logs: [], percentage: 0 };
+    if (!state.proteinHistory) state.proteinHistory = [];
+    let record = state.proteinHistory.find(p => p.date === dateStr);
+    
+    const bw = parseFloat(state.bodyWeight) || 70;
+    const target = Math.round(bw * 1.8);
+    
+    if (!record) {
+        return {
+            date: dateStr,
+            target: target,
+            total: 0,
+            logs: [],
+            percentage: 0
+        };
+    }
+    
+    const total = (record.logs || []).reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+    record.total = total;
+    record.target = target;
+    
+    return {
+        date: dateStr,
+        target: target,
+        total: total,
+        logs: record.logs || [],
+        percentage: Math.min(Math.round((total / (target || 1)) * 100), 100)
+    };
+}
+
+function addProteinEntry(dateStr, amount, note = '') {
+    const amt = parseFloat(amount);
+    if (!amt || amt <= 0) return null;
+    
+    if (!state) return null;
+    if (!state.proteinHistory) state.proteinHistory = [];
+    let record = state.proteinHistory.find(p => p.date === dateStr);
+    
+    const now = new Date();
+    const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    
+    const entry = {
+        id: Date.now().toString() + '_' + Math.random().toString(36).slice(2, 6),
+        amount: amt,
+        time: timeStr,
+        note: note
+    };
+    
+    if (record) {
+        if (!record.logs) record.logs = [];
+        record.logs.push(entry);
+        record.total = record.logs.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+    } else {
+        record = {
+            date: dateStr,
+            target: Math.round((parseFloat(state.bodyWeight) || 70) * 1.8),
+            total: amt,
+            logs: [entry]
+        };
+        state.proteinHistory.push(record);
+    }
+    
+    if (typeof saveData === 'function') saveData();
+    return entry;
+}
+
+function removeProteinEntry(dateStr, entryId) {
+    if (!state || !state.proteinHistory || !entryId) return false;
+    const record = state.proteinHistory.find(p => p.date === dateStr);
+    if (!record || !record.logs) return false;
+    
+    const idx = record.logs.findIndex(item => item.id === entryId);
+    if (idx === -1) return false;
+    
+    record.logs.splice(idx, 1);
+    record.total = record.logs.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+    
+    if (typeof saveData === 'function') saveData();
+    return true;
+}
+
 function copyWorkoutSummary() {
     const workout = lastFinishedWorkout || (state.history.length > 0 ? state.history[state.history.length - 1] : null);
     if (!workout) {
