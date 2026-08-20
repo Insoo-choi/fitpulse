@@ -366,8 +366,38 @@ function openSetEditModal(exIndex, setIndex) {
     
     document.getElementById('edit-weight-input').value = set.weight;
     document.getElementById('edit-reps-input').value = set.reps;
+    updateEditModal1RM();
     document.getElementById('set-edit-modal').classList.remove('hidden');
     lucide.createIcons();
+}
+
+function updateEditModal1RM() {
+    if (!currentEditingSet || !state.activeWorkout) return;
+    const exercise = state.activeWorkout.exercises[currentEditingSet.exIndex];
+    if (!exercise) return;
+    
+    const wInput = document.getElementById('edit-weight-input');
+    const rInput = document.getElementById('edit-reps-input');
+    const w = parseFloat(wInput ? wInput.value : 0) || 0;
+    const r = parseInt(rInput ? rInput.value : 0) || 0;
+    
+    const e1rm = typeof calculate1RM === 'function' ? calculate1RM(w, r) : 0;
+    const pr = typeof getPersonalRecord === 'function' ? getPersonalRecord(exercise.name) : { max1RM: 0 };
+    
+    const e1rmEl = document.getElementById('edit-set-e1rm');
+    const prInfoEl = document.getElementById('edit-set-max-pr');
+    const prBadge = document.getElementById('edit-set-pr-badge');
+    
+    if (e1rmEl) e1rmEl.innerText = `${e1rm} kg`;
+    if (prInfoEl) prInfoEl.innerText = pr.max1RM > 0 ? `${pr.max1RM} kg (${pr.maxWeight}kg x ${pr.maxReps}회)` : '기록 없음';
+    
+    if (prBadge) {
+        if (e1rm > 0 && e1rm >= pr.max1RM && (pr.max1RM > 0 || (w > 0 && r > 0))) {
+            prBadge.classList.remove('hidden');
+        } else {
+            prBadge.classList.add('hidden');
+        }
+    }
 }
 
 function adjustEditVal(field, val) {
@@ -378,6 +408,7 @@ function adjustEditVal(field, val) {
     if(field === 'weight') current = (Math.round(current * 2) / 2).toString();
     else current = Math.round(current).toString();
     input.value = current;
+    updateEditModal1RM();
 }
 
 function saveSetEdit(applyToSubsequent = false) {
@@ -703,6 +734,67 @@ function finalizeWorkout() {
     }
     if (radarContainer) {
         radarContainer.innerHTML = rHtml || '<div class="text-xs text-slate-500">데이터 없음</div>';
+    }
+    
+    // Detect PR achievements in today's workout
+    const prListEl = document.getElementById('summary-pr-list');
+    const prSectionEl = document.getElementById('summary-pr-section');
+    const newPrs = [];
+    
+    if (workout && workout.exercises) {
+        workout.exercises.forEach(ex => {
+            let todayMax1RM = 0;
+            let todayBestSet = null;
+            (ex.sets || []).forEach(s => {
+                const w = parseFloat(s.weight) || 0;
+                const r = parseInt(s.reps) || 0;
+                const e1rm = typeof calculate1RM === 'function' ? calculate1RM(w, r) : 0;
+                if (e1rm > todayMax1RM) {
+                    todayMax1RM = e1rm;
+                    todayBestSet = { weight: w, reps: r };
+                }
+            });
+            
+            // Check past PR before today's workout
+            let pastMax1RM = 0;
+            (state.history || []).forEach(h => {
+                if (h.id === workout.id || h.isRunning || !h.exercises) return;
+                h.exercises.forEach(he => {
+                    if (he.name !== ex.name || !he.sets) return;
+                    he.sets.forEach(s => {
+                        const e1rm = typeof calculate1RM === 'function' ? calculate1RM(s.weight, s.reps) : 0;
+                        if (e1rm > pastMax1RM) pastMax1RM = e1rm;
+                    });
+                });
+            });
+            
+            if (todayMax1RM > 0 && todayMax1RM > pastMax1RM && pastMax1RM > 0) {
+                newPrs.push({
+                    name: ex.name,
+                    new1RM: todayMax1RM,
+                    old1RM: pastMax1RM,
+                    diff: Math.round((todayMax1RM - pastMax1RM) * 10) / 10,
+                    bestSet: todayBestSet
+                });
+            }
+        });
+    }
+    
+    if (prSectionEl && prListEl) {
+        if (newPrs.length > 0) {
+            prListEl.innerHTML = newPrs.map(pr => `
+                <div class="flex items-center justify-between bg-amber-950/40 border border-amber-500/30 p-2.5 rounded-xl">
+                    <div>
+                        <span class="font-black text-white text-xs block">${pr.name}</span>
+                        <span class="text-[10px] text-amber-300 font-bold">${pr.bestSet.weight}kg x ${pr.bestSet.reps}회 (1RM: ${pr.new1RM}kg)</span>
+                    </div>
+                    <span class="text-xs font-black text-amber-400 bg-amber-900/60 px-2 py-1 rounded-lg">+${pr.diff}kg 🚀</span>
+                </div>
+            `).join('');
+            prSectionEl.classList.remove('hidden');
+        } else {
+            prSectionEl.classList.add('hidden');
+        }
     }
     
     document.getElementById('summary-modal').classList.remove('hidden');

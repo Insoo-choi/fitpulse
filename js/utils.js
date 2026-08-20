@@ -35,6 +35,49 @@ function getOverloadTypeLabel(type) {
     return '분류';
 }
 
+// --- 1RM & Personal Record (PR) Calculations ---
+function calculate1RM(weight, reps) {
+    const w = parseFloat(weight) || 0;
+    const r = parseInt(reps) || 0;
+    if (w <= 0 || r <= 0) return 0;
+    if (r === 1) return w;
+    // Epley formula: 1RM = w * (1 + r / 30)
+    const e1rm = w * (1 + (r / 30));
+    return Math.round(e1rm * 10) / 10;
+}
+
+function getPersonalRecord(exerciseName) {
+    let max1RM = 0;
+    let maxWeight = 0;
+    let maxRepsAtMaxWeight = 0;
+    let prDate = null;
+    
+    (state.history || []).forEach(workout => {
+        if (workout.isRunning || !workout.exercises) return;
+        workout.exercises.forEach(ex => {
+            if (ex.name !== exerciseName || !ex.sets) return;
+            ex.sets.forEach(s => {
+                const w = parseFloat(s.weight) || 0;
+                const r = parseInt(s.reps) || 0;
+                const e1rm = calculate1RM(w, r);
+                if (e1rm > max1RM) {
+                    max1RM = e1rm;
+                    maxWeight = w;
+                    maxRepsAtMaxWeight = r;
+                    prDate = workout.date;
+                }
+            });
+        });
+    });
+    
+    return {
+        max1RM,
+        maxWeight,
+        maxReps: maxRepsAtMaxWeight,
+        date: prDate
+    };
+}
+
 function copyWorkoutSummary() {
     const workout = lastFinishedWorkout || (state.history.length > 0 ? state.history[state.history.length - 1] : null);
     if (!workout) {

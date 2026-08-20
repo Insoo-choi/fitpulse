@@ -153,7 +153,7 @@
                 <button onclick="closeModal('set-edit-modal')" class="text-slate-400 p-1"><i data-lucide="x" class="w-6 h-6"></i></button>
             </div>
             
-            <div class="flex items-center gap-4 mb-6">
+            <div class="flex items-center gap-4 mb-3">
                 <div class="flex-1">
                     <label class="block text-xs text-slate-400 mb-1 text-center font-bold">무게 (kg)</label>
                     <div class="flex items-center justify-center gap-1 sm:gap-2 bg-slate-800 p-2 rounded-xl">
@@ -161,7 +161,7 @@
                             <button onclick="adjustEditVal('weight', -5)" class="w-8 sm:w-10 h-6 rounded bg-slate-700 text-slate-300 text-[10px] font-bold active:bg-slate-600">-5</button>
                             <button onclick="adjustEditVal('weight', -0.5)" class="w-8 sm:w-10 h-6 rounded bg-slate-700 text-slate-300 text-[10px] font-bold active:bg-slate-600">-0.5</button>
                         </div>
-                        <input type="number" id="edit-weight-input" class="w-14 sm:w-16 bg-transparent text-center text-xl font-bold text-white outline-none" inputmode="decimal">
+                        <input type="number" id="edit-weight-input" oninput="updateEditModal1RM()" class="w-14 sm:w-16 bg-transparent text-center text-xl font-bold text-white outline-none" inputmode="decimal">
                         <div class="flex flex-col gap-1">
                             <button onclick="adjustEditVal('weight', 0.5)" class="w-8 sm:w-10 h-6 rounded bg-slate-700 text-slate-300 text-[10px] font-bold active:bg-slate-600">+0.5</button>
                             <button onclick="adjustEditVal('weight', 5)" class="w-8 sm:w-10 h-6 rounded bg-slate-700 text-slate-300 text-[10px] font-bold active:bg-slate-600">+5</button>
@@ -175,12 +175,24 @@
                             <button onclick="adjustEditVal('reps', -5)" class="w-6 h-6 rounded bg-slate-700 text-slate-300 text-[10px] font-bold active:bg-slate-600">-5</button>
                             <button onclick="adjustEditVal('reps', -1)" class="w-6 h-6 rounded bg-slate-700 text-slate-300 font-bold active:bg-slate-600">-</button>
                         </div>
-                        <input type="number" id="edit-reps-input" class="w-12 bg-transparent text-center text-xl font-bold text-white outline-none" inputmode="numeric">
+                        <input type="number" id="edit-reps-input" oninput="updateEditModal1RM()" class="w-12 bg-transparent text-center text-xl font-bold text-white outline-none" inputmode="numeric">
                         <div class="flex flex-col gap-1">
                             <button onclick="adjustEditVal('reps', 5)" class="w-6 h-6 rounded bg-slate-700 text-slate-300 text-[10px] font-bold active:bg-slate-600">+5</button>
                             <button onclick="adjustEditVal('reps', 1)" class="w-6 h-6 rounded bg-slate-700 text-slate-300 font-bold active:bg-slate-600">+</button>
                         </div>
                     </div>
+                </div>
+            </div>
+            
+            <!-- Live 1RM & PR Display -->
+            <div class="bg-slate-800/80 rounded-xl p-2.5 mb-5 border border-slate-700/60 flex items-center justify-between">
+                <div class="flex items-center gap-1.5">
+                    <span class="text-[10px] font-bold text-slate-400">추정 1RM</span>
+                    <span class="text-sm font-black text-amber-400" id="edit-set-e1rm">0 kg</span>
+                    <span id="edit-set-pr-badge" class="hidden text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded font-black">🏆 PR</span>
+                </div>
+                <div class="text-[10px] text-slate-400 font-bold" id="edit-set-pr-info">
+                    역대 최고: <span class="text-white font-bold" id="edit-set-max-pr">-</span>
                 </div>
             </div>
             
@@ -389,6 +401,16 @@
             <div class="absolute -top-10 -right-10 w-32 h-32 bg-brand-500/20 blur-3xl rounded-full"></div>
             <h3 class="text-sm font-bold text-slate-300 mb-4 flex items-center gap-2"><i data-lucide="activity" class="w-4 h-4 text-brand-400"></i> 타겟 부위 활성도</h3>
             <div id="muscle-activation-bars" class="space-y-3">
+                <!-- Rendered by JS -->
+            </div>
+        </div>
+
+        <!-- New PR Celebration Container -->
+        <div id="summary-pr-section" class="hidden bg-amber-950/30 border border-amber-500/40 rounded-3xl p-5 mb-6 shadow-2xl">
+            <h3 class="text-sm font-black text-amber-400 mb-3 flex items-center gap-2">
+                <i data-lucide="trophy" class="w-4 h-4"></i> 오늘 달성한 새로운 PR!
+            </h3>
+            <div id="summary-pr-list" class="space-y-2">
                 <!-- Rendered by JS -->
             </div>
         </div>
