@@ -147,6 +147,9 @@ function showDateInfo(dateStr) {
             }
         }).join('');
     } else {
+        wInfo = '<p class="text-slate-400 text-sm text-center my-4">기록된 운동이 없습니다.</p>';
+    }
+
     const proteinData = typeof getDailyProteinData === 'function' ? getDailyProteinData(dateStr) : { total: 0, target: 126, percentage: 0, logs: [] };
     
     let proteinLogsHtml = '';
