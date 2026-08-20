@@ -227,6 +227,36 @@ function generateWarmupSets(workingWeight) {
     }
 }
 
+// --- Barbell Plate Calculator ---
+function calculatePlates(targetWeight, barWeight = 20, availablePlates = [20, 15, 10, 5, 2.5, 1.25]) {
+    const target = parseFloat(targetWeight) || 0;
+    const bar = parseFloat(barWeight) || 20;
+    if (target <= bar) {
+        return { barWeight: bar, targetWeight: target, sideWeight: 0, plates: [], remainder: 0 };
+    }
+    
+    let totalSideWeight = (target - bar) / 2;
+    let remainingSideWeight = totalSideWeight;
+    const plates = [];
+    
+    const sortedPlates = availablePlates.slice().sort((a, b) => b - a);
+    sortedPlates.forEach(plate => {
+        const count = Math.floor((remainingSideWeight + 0.0001) / plate);
+        if (count > 0) {
+            plates.push({ plate, count });
+            remainingSideWeight = Math.round((remainingSideWeight - plate * count) * 100) / 100;
+        }
+    });
+    
+    return {
+        barWeight: bar,
+        targetWeight: target,
+        sideWeight: totalSideWeight,
+        plates: plates,
+        remainder: remainingSideWeight > 0.05 ? remainingSideWeight : 0
+    };
+}
+
 function copyWorkoutSummary() {
     const workout = lastFinishedWorkout || (state.history.length > 0 ? state.history[state.history.length - 1] : null);
     if (!workout) {

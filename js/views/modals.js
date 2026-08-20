@@ -578,3 +578,72 @@ function dismissDailyWeight() {
     localStorage.setItem('fitpulse_weight_dismissed_date', today);
     closeModal('daily-weight-modal');
 }
+
+// --- Barbell Plate Calculator Modal Logic ---
+function openPlateCalculator(initialWeight = 60) {
+    const input = document.getElementById('plate-target-weight');
+    if (input) input.value = initialWeight;
+    renderPlateCalculator();
+    const modal = document.getElementById('plate-calculator-modal');
+    if (modal) modal.classList.remove('hidden');
+    lucide.createIcons();
+}
+
+function openPlateCalculatorFromModal() {
+    const weightInput = document.getElementById('edit-weight-input');
+    const w = parseFloat(weightInput ? weightInput.value : 0) || 60;
+    openPlateCalculator(w);
+}
+
+function renderPlateCalculator() {
+    const targetInput = document.getElementById('plate-target-weight');
+    const barSelect = document.getElementById('plate-bar-weight');
+    const sideEl = document.getElementById('plate-side-weight');
+    const visualEl = document.getElementById('plate-visual-container');
+    const summaryEl = document.getElementById('plate-summary-text');
+    
+    const target = parseFloat(targetInput ? targetInput.value : 0) || 0;
+    const bar = parseFloat(barSelect ? barSelect.value : 20) || 20;
+    
+    const res = typeof calculatePlates === 'function' ? calculatePlates(target, bar) : { sideWeight: 0, plates: [] };
+    
+    if (sideEl) sideEl.innerText = `${res.sideWeight} kg`;
+    
+    const plateColors = {
+        20: 'bg-blue-600 border-blue-400 text-white',
+        15: 'bg-yellow-500 border-yellow-300 text-slate-900',
+        10: 'bg-emerald-600 border-emerald-400 text-white',
+        5: 'bg-rose-600 border-rose-400 text-white',
+        2.5: 'bg-slate-700 border-slate-500 text-slate-100',
+        1.25: 'bg-slate-500 border-slate-300 text-slate-900'
+    };
+    
+    if (visualEl) {
+        if (res.plates.length === 0) {
+            visualEl.innerHTML = `<span class="text-xs text-slate-500 font-bold">${target <= bar ? '원판 필요 없음 (바벨만 사용)' : '장착 가능한 원판 조합 없음'}</span>`;
+        } else {
+            let html = '';
+            res.plates.forEach(p => {
+                const color = plateColors[p.plate] || 'bg-slate-700 border-slate-500 text-white';
+                for (let i = 0; i < p.count; i++) {
+                    html += `
+                        <div class="flex flex-col items-center justify-center w-10 h-16 rounded-lg border-2 shadow-md ${color} font-black text-xs">
+                            <span>${p.plate}</span>
+                            <span class="text-[8px] font-normal opacity-80">kg</span>
+                        </div>
+                    `;
+                }
+            });
+            visualEl.innerHTML = html;
+        }
+    }
+    
+    if (summaryEl) {
+        if (res.plates.length > 0) {
+            const summaryStr = res.plates.map(p => `<span class="text-amber-400 font-bold">${p.plate}kg</span> x ${p.count}개`).join(' + ');
+            summaryEl.innerHTML = `한쪽당: ${summaryStr} ${res.remainder > 0 ? `<span class="text-rose-400 text-[10px]"> (잔여 ${res.remainder}kg)</span>` : ''}`;
+        } else {
+            summaryEl.innerHTML = '';
+        }
+    }
+}

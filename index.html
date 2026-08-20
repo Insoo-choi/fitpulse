@@ -155,7 +155,10 @@
             
             <div class="flex items-center gap-4 mb-3">
                 <div class="flex-1">
-                    <label class="block text-xs text-slate-400 mb-1 text-center font-bold">무게 (kg)</label>
+                    <div class="flex items-center justify-center gap-1 mb-1">
+                        <label class="text-xs text-slate-400 font-bold">무게 (kg)</label>
+                        <button type="button" onclick="openPlateCalculatorFromModal()" class="text-[10px] text-amber-400 hover:text-amber-300 font-bold ml-1 bg-amber-950/40 border border-amber-500/30 px-1.5 py-0.2 rounded active:scale-95 transition-all">🥞원판</button>
+                    </div>
                     <div class="flex items-center justify-center gap-1 sm:gap-2 bg-slate-800 p-2 rounded-xl">
                         <div class="flex flex-col gap-1">
                             <button onclick="adjustEditVal('weight', -5)" class="w-8 sm:w-10 h-6 rounded bg-slate-700 text-slate-300 text-[10px] font-bold active:bg-slate-600">-5</button>
@@ -231,6 +234,55 @@
             <div class="flex-1 overflow-y-auto p-4 space-y-3" id="ex-history-list">
                 <!-- Rendered by JS -->
             </div>
+        </div>
+    </div>
+
+    <!-- Barbell Plate Calculator Modal -->
+    <div id="plate-calculator-modal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-[75] hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl p-5 w-full max-w-sm flex flex-col shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-amber-900/40 flex items-center justify-center text-amber-400">
+                        <i data-lucide="disc" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-black text-white">바벨 원판 계산기</h3>
+                        <p class="text-[10px] text-slate-400 font-bold">한쪽(Side) 장착 원판</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('plate-calculator-modal')" class="text-slate-400 p-1 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+
+            <!-- Target & Bar Weight Settings -->
+            <div class="grid grid-cols-2 gap-2 mb-4 bg-slate-800/80 p-3 rounded-2xl border border-slate-700/60">
+                <div>
+                    <label class="text-[10px] text-slate-400 font-bold block mb-1">목표 총 중량 (kg)</label>
+                    <input type="number" id="plate-target-weight" oninput="renderPlateCalculator()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-center text-lg font-black text-white outline-none focus:border-amber-500">
+                </div>
+                <div>
+                    <label class="text-[10px] text-slate-400 font-bold block mb-1">바벨 봉 무게</label>
+                    <select id="plate-bar-weight" onchange="renderPlateCalculator()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2.5 text-xs font-bold text-white outline-none focus:border-amber-500 appearance-none text-center">
+                        <option value="20">20kg (표준 봉)</option>
+                        <option value="15">15kg (여성용/EZ)</option>
+                        <option value="10">10kg (경량 바)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Visual Barbell & Plate Result -->
+            <div class="bg-slate-950/80 rounded-2xl p-4 border border-slate-800 mb-4 text-center">
+                <div class="text-[11px] text-slate-400 font-bold mb-2">한쪽에 꽂을 무게: <span class="text-amber-400 font-black text-sm" id="plate-side-weight">0 kg</span></div>
+                <div id="plate-visual-container" class="min-h-16 flex items-center justify-center gap-1.5 flex-wrap py-2">
+                    <!-- Rendered by JS -->
+                </div>
+                <div id="plate-summary-text" class="text-xs text-slate-300 font-bold mt-2">
+                    <!-- e.g. 20kg x 1, 10kg x 1 -->
+                </div>
+            </div>
+
+            <button onclick="closeModal('plate-calculator-modal')" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 rounded-xl text-xs active:scale-95 transition-all">
+                닫기
+            </button>
         </div>
     </div>
 
