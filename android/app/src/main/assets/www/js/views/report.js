@@ -48,12 +48,23 @@ function renderReportView() {
                 <select id="chart-type-selector" class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl py-3 px-4 outline-none focus:border-brand-500 font-bold mb-4 appearance-none" onchange="renderCharts()">
                     <option value="volume">📊 [전체] 날짜별 총 운동 볼륨 (kg)</option>
                     <option value="weight">⚖️ [체성분] 내 체중 변화 추이 (kg)</option>
+                    ${renderExerciseChartOptions()}
                 </select>
                 <div class="relative h-64 w-full">
                     <canvas id="growthChart"></canvas>
                 </div>
             </div>
         </div>
+    `;
+}
+
+function renderExerciseChartOptions() {
+    const exercises = typeof getPerformedExerciseList === 'function' ? getPerformedExerciseList() : [];
+    if (exercises.length === 0) return '';
+    return `
+        <optgroup label="🏋️ 종목별 1RM 성장 곡선">
+            ${exercises.map(name => `<option value="ex:${name}">📈 ${name} (최고 1RM 추이)</option>`).join('')}
+        </optgroup>
     `;
 }
 
@@ -105,20 +116,28 @@ function renderCharts() {
     let gradientColor = '';
     let borderColor = '';
     
-    if(chartType === 'volume') {
+    if (chartType === 'volume') {
         const gymWorkouts = state.history.filter(h => !h.isRunning).slice(-14);
         labels = gymWorkouts.map(h => h.date.slice(5)); // MM-DD
         data = gymWorkouts.map(h => h.totalVolume);
         labelName = '총 볼륨 (kg)';
         borderColor = '#3b82f6';
         gradientColor = 'rgba(59, 130, 246, 0.2)';
-    } else {
+    } else if (chartType === 'weight') {
         const wHistory = (state.weightHistory || []).slice(-14);
         labels = wHistory.map(h => h.date.slice(5));
         data = wHistory.map(h => h.weight);
         labelName = '체중 (kg)';
         borderColor = '#10b981'; // emerald
         gradientColor = 'rgba(16, 185, 129, 0.2)';
+    } else if (chartType.startsWith('ex:')) {
+        const exName = chartType.slice(3);
+        const timeSeries = typeof getExerciseHistoryTimeSeries === 'function' ? getExerciseHistoryTimeSeries(exName) : [];
+        labels = timeSeries.map(h => h.date.slice(5));
+        data = timeSeries.map(h => h.max1RM);
+        labelName = `${exName} 최고 1RM (kg)`;
+        borderColor = '#f59e0b'; // amber
+        gradientColor = 'rgba(245, 158, 11, 0.2)';
     }
     
     const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 300);

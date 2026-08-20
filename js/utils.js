@@ -154,6 +154,54 @@ function calculateWeeklyMuscleVolume(historyList = (typeof state !== 'undefined'
     });
 }
 
+// --- Exercise-specific Time Series Data for Progression Charts ---
+function getPerformedExerciseList(historyList = (typeof state !== 'undefined' && state ? state.history : [])) {
+    const set = new Set();
+    (historyList || []).forEach(w => {
+        if (w.isRunning || !w.exercises) return;
+        w.exercises.forEach(e => {
+            if (e.name) set.add(e.name);
+        });
+    });
+    return Array.from(set);
+}
+
+function getExerciseHistoryTimeSeries(exerciseName, historyList = (typeof state !== 'undefined' && state ? state.history : [])) {
+    const list = [];
+    (historyList || []).forEach(workout => {
+        if (workout.isRunning || !workout.exercises || !workout.date) return;
+        const ex = workout.exercises.find(e => e.name === exerciseName);
+        if (!ex || !ex.sets || ex.sets.length === 0) return;
+        
+        let maxWeight = 0;
+        let max1RM = 0;
+        let bestReps = 0;
+        let totalVol = 0;
+        
+        ex.sets.forEach(s => {
+            const w = parseFloat(s.weight) || 0;
+            const r = parseInt(s.reps) || 0;
+            const e1rm = typeof calculate1RM === 'function' ? calculate1RM(w, r) : w;
+            if (e1rm > max1RM) {
+                max1RM = e1rm;
+                maxWeight = w;
+                bestReps = r;
+            }
+            totalVol += (w * r);
+        });
+        
+        list.push({
+            date: workout.date,
+            maxWeight: maxWeight,
+            max1RM: max1RM,
+            bestReps: bestReps,
+            totalVolume: totalVol
+        });
+    });
+    
+    return list.sort((a, b) => (a.date > b.date ? 1 : -1));
+}
+
 function copyWorkoutSummary() {
     const workout = lastFinishedWorkout || (state.history.length > 0 ? state.history[state.history.length - 1] : null);
     if (!workout) {
