@@ -77,9 +77,27 @@ function renderActiveWorkout() {
         const wType = exercise.weightType || 'total';
         const wLabel = wType === 'single' ? '한손' : wType === 'machine' ? '머신' : '전체';
         
-        let setsHtml = exercise.sets.map((set, sIndex) => `
+        let setsHtml = exercise.sets.map((set, sIndex) => {
+            const setType = set.type || (set.isWarmup ? 'warmup' : 'normal');
+            let badgeText = `${sIndex + 1}`;
+            let badgeClass = 'text-slate-500 bg-slate-800/60 border border-slate-700/50';
+            
+            if (setType === 'warmup') {
+                badgeText = 'W';
+                badgeClass = 'text-amber-400 bg-amber-950/80 border border-amber-800/60';
+            } else if (setType === 'drop') {
+                badgeText = 'D';
+                badgeClass = 'text-blue-400 bg-blue-950/80 border border-blue-800/60';
+            } else if (setType === 'failure') {
+                badgeText = 'F';
+                badgeClass = 'text-rose-400 bg-rose-950/80 border border-rose-800/60';
+            }
+
+            return `
             <div class="flex items-center gap-2 mb-2 group">
-                <div class="w-6 text-center text-xs font-bold text-slate-500">${sIndex + 1}</div>
+                <button type="button" onclick="toggleSetType(${index}, ${sIndex})" title="세트 유형 변경 (일반/웜업/드롭/실패)" class="w-7 h-7 rounded-lg text-center text-xs font-black shrink-0 active:scale-90 transition-transform ${badgeClass}">
+                    ${badgeText}
+                </button>
                 <div class="flex-1 flex gap-2 cursor-pointer" onclick="openSetEditModal(${index}, ${sIndex})">
                     <div class="flex-1 bg-slate-900/50 rounded-xl py-2 px-3 text-center border border-slate-700/50 relative">
                         <span class="font-black text-lg ${set.completed ? 'text-slate-400' : 'text-white'}">${set.weight}</span>
@@ -94,7 +112,8 @@ function renderActiveWorkout() {
                     <i data-lucide="check" class="w-6 h-6 ${set.completed ? 'opacity-100' : 'opacity-30'}"></i>
                 </button>
             </div>
-        `).join('');
+            `;
+        }).join('');
 
         html += `
         <div class="bg-slate-800/80 rounded-2xl p-4 border border-slate-700/50 mb-4 transition-all ex-card ${isAllCompleted ? 'opacity-70' : 'shadow-lg shadow-black/20'}" data-index="${index}">
@@ -165,6 +184,21 @@ function addWarmupSets(exIndex) {
     }
     
     exercise.sets.unshift(...warmupSets);
+    saveActiveWorkout();
+    updateUI();
+}
+
+function toggleSetType(exIndex, setIndex) {
+    if (!state.activeWorkout || !state.activeWorkout.exercises[exIndex]) return;
+    const set = state.activeWorkout.exercises[exIndex].sets[setIndex];
+    if (!set) return;
+    
+    const types = ['normal', 'warmup', 'drop', 'failure'];
+    const current = set.type || (set.isWarmup ? 'warmup' : 'normal');
+    const nextIdx = (types.indexOf(current) + 1) % types.length;
+    set.type = types[nextIdx];
+    set.isWarmup = set.type === 'warmup';
+    
     saveActiveWorkout();
     updateUI();
 }
