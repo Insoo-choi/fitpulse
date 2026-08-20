@@ -91,6 +91,77 @@ function closeModal(id) {
     if (el) el.classList.add('hidden');
 }
 
+// --- Backup & Restore (JSON Export / Import) ---
+
+function exportFitPulseData() {
+    const today = typeof getTodayDateString === 'function' ? getTodayDateString() : new Date().toISOString().slice(0, 10);
+    const backupData = {
+        app: 'FitPulse Pro',
+        version: '2.0',
+        exportedAt: new Date().toISOString(),
+        state: state
+    };
+    
+    const dataStr = JSON.stringify(backupData, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `fitpulse_backup_${today}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function importFitPulseData(jsonString) {
+    try {
+        const parsed = JSON.parse(jsonString);
+        const importedState = parsed.state || parsed;
+        
+        if (!importedState || typeof importedState !== 'object') {
+            return { success: false, message: '올바른 백업 데이터 형식이 아닙니다.' };
+        }
+        
+        if (!Array.isArray(importedState.routines) || !Array.isArray(importedState.history)) {
+            return { success: false, message: '백업 데이터에 필수 항목(루틴, 기록)이 누락되었습니다.' };
+        }
+        
+        state.routines = importedState.routines || [];
+        state.history = importedState.history || [];
+        state.weightHistory = importedState.weightHistory || [];
+        state.bodyWeight = parseFloat(importedState.bodyWeight) || 70;
+        state.height = parseFloat(importedState.height) || 175;
+        state.minIncrement = parseFloat(importedState.minIncrement) || 2.5;
+        state.defaultRestTime = parseInt(importedState.defaultRestTime) || 90;
+        state.workoutCount = parseInt(importedState.workoutCount) || state.history.length;
+        
+        saveData();
+        return { success: true, message: `✅ 백업 데이터가 성공적으로 복원되었습니다! (루틴 ${state.routines.length}개, 기록 ${state.history.length}개)` };
+    } catch (e) {
+        return { success: false, message: 'JSON 파일을 파싱하는 중 오류가 발생했습니다: ' + e.message };
+    }
+}
+
+function handleBackupFileSelect(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const result = importFitPulseData(e.target.result);
+        alert(result.message);
+        if (result.success) {
+            if (typeof switchTab === 'function') {
+                switchTab(currentTab || 'home');
+            }
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+}
+
 // --- Rest Timer ---
 function startRestTimer() {
     if (isResting) clearInterval(timerInterval);

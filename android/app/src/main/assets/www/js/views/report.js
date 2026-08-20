@@ -24,6 +24,23 @@ function renderReportView() {
                 </div>
             </div>
 
+            <!-- Data Backup & Restore -->
+            <div class="bg-slate-800/80 rounded-2xl p-4 border border-slate-700/50 mb-6 shadow-xl">
+                <h3 class="text-sm font-bold text-slate-300 mb-3 flex items-center gap-2">
+                    <i data-lucide="database" class="w-4 h-4 text-brand-400"></i> 데이터 백업 및 복원
+                </h3>
+                <p class="text-xs text-slate-400 mb-4">루틴, 과거 운동 기록, 체중 히스토리를 JSON 파일로 저장하거나 새 기기로 불러옵니다.</p>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="exportFitPulseData()" class="flex items-center justify-center gap-2 bg-slate-700 hover:bg-slate-600 active:bg-slate-500 text-white font-bold py-2.5 px-3 rounded-xl text-xs transition-colors shadow-sm">
+                        <i data-lucide="download" class="w-3.5 h-3.5"></i> 백업 다운로드
+                    </button>
+                    <label class="flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-500 active:bg-brand-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs transition-colors cursor-pointer shadow-sm text-center">
+                        <i data-lucide="upload" class="w-3.5 h-3.5"></i> 백업 불러오기
+                        <input type="file" id="backup-file-input" accept=".json" onchange="handleBackupFileSelect(event)" class="hidden">
+                    </label>
+                </div>
+            </div>
+
             <div class="bg-slate-800/80 rounded-3xl p-5 border border-slate-700/50 shadow-xl mb-6">
                 <select id="chart-type-selector" class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl py-3 px-4 outline-none focus:border-brand-500 font-bold mb-4 appearance-none" onchange="renderCharts()">
                     <option value="volume">📊 [전체] 날짜별 총 운동 볼륨 (kg)</option>
