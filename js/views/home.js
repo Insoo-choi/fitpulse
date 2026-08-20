@@ -155,7 +155,7 @@ function showDateInfo(dateStr) {
             <div class="mt-2.5 pt-2 border-t border-slate-700/60 space-y-1.5 max-h-24 overflow-y-auto no-scrollbar">
                 ${proteinData.logs.map(log => `
                     <div class="flex items-center justify-between text-[11px] bg-slate-900/60 px-2 py-1 rounded-lg">
-                        <span class="text-slate-300 font-bold"><span class="text-amber-400 font-black">+${log.amount}g</span> ${log.note ? `(${log.note})` : ''} <span class="text-slate-500 text-[9px] ml-1">${log.time}</span></span>
+                        <span class="text-slate-300 font-bold"><span class="text-amber-400 font-black">+${log.amount}g</span> ${log.note ? `<span class="text-slate-400 text-[10px]">(${log.note})</span>` : ''} <span class="text-slate-500 text-[9px] ml-1">${log.time}</span></span>
                         <button onclick="handleRemoveProtein('${dateStr}', '${log.id}')" class="text-slate-500 hover:text-rose-400 p-0.5"><i data-lucide="x" class="w-3 h-3"></i></button>
                     </div>
                 `).join('')}
@@ -179,18 +179,21 @@ function showDateInfo(dateStr) {
             </div>
 
             <!-- Quick Add Buttons -->
-            <div class="grid grid-cols-4 gap-1.5 mb-2">
-                <button onclick="handleQuickAddProtein('${dateStr}', 10, '달걀/우유')" class="py-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-bold text-[10px] rounded-lg border border-slate-700 transition-transform">
+            <div class="grid grid-cols-5 gap-1.5 mb-2">
+                <button onclick="handleQuickAddProtein('${dateStr}', 10)" class="py-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-black text-[11px] rounded-lg border border-slate-700 transition-transform">
                     +10g
                 </button>
-                <button onclick="handleQuickAddProtein('${dateStr}', 20, '프로틴 쉐이크')" class="py-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-bold text-[10px] rounded-lg border border-slate-700 transition-transform">
+                <button onclick="handleQuickAddProtein('${dateStr}', 20)" class="py-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-black text-[11px] rounded-lg border border-slate-700 transition-transform">
                     +20g
                 </button>
-                <button onclick="handleQuickAddProtein('${dateStr}', 30, '닭가슴살 1팩')" class="py-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-bold text-[10px] rounded-lg border border-slate-700 transition-transform">
+                <button onclick="handleQuickAddProtein('${dateStr}', 30)" class="py-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-black text-[11px] rounded-lg border border-slate-700 transition-transform">
                     +30g
                 </button>
-                <button onclick="handleQuickAddProtein('${dateStr}', 40, '고기/생선')" class="py-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-bold text-[10px] rounded-lg border border-slate-700 transition-transform">
+                <button onclick="handleQuickAddProtein('${dateStr}', 40)" class="py-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-black text-[11px] rounded-lg border border-slate-700 transition-transform">
                     +40g
+                </button>
+                <button onclick="handleQuickAddProtein('${dateStr}', 50)" class="py-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-black text-[11px] rounded-lg border border-slate-700 transition-transform">
+                    +50g
                 </button>
             </div>
 
