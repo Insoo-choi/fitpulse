@@ -114,6 +114,9 @@ function renderActiveWorkout() {
                             <button onclick="toggleOverloadType(${index})" class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-brand-900/50 text-brand-300 border border-brand-700/50 whitespace-nowrap active:scale-95">
                                 ${catLabel}
                             </button>
+                            <button onclick="openExerciseHistoryModal('${exercise.name.replace(/'/g, "\\'")}')" class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-700/80 hover:bg-slate-700 text-slate-300 border border-slate-600/50 whitespace-nowrap active:scale-95 flex items-center gap-1">
+                                <i data-lucide="history" class="w-3 h-3 text-brand-400"></i> 이전 기록
+                            </button>
                         </div>
                         ${exercise.aiMessage ? `<div class="text-[10px] font-bold text-emerald-400 bg-emerald-950 px-2 py-1 rounded-md mt-1.5 self-start">${exercise.aiMessage}</div>` : ''}
                     </div>
@@ -260,6 +263,81 @@ function submitRPE(score) {
     currentRpeExerciseIndex = -1;
     saveActiveWorkout();
     updateUI();
+}
+
+function openExerciseHistoryModal(exerciseName) {
+    const titleEl = document.getElementById('ex-history-title');
+    const subtitleEl = document.getElementById('ex-history-subtitle');
+    const listEl = document.getElementById('ex-history-list');
+    
+    if (titleEl) titleEl.innerText = exerciseName;
+    
+    const historyRecords = (state.history || []).filter(h => {
+        if (h.isRunning) return false;
+        return h.exercises && h.exercises.some(e => e.name === exerciseName);
+    }).slice().reverse();
+    
+    if (subtitleEl) {
+        subtitleEl.innerText = `총 ${historyRecords.length}회의 과거 수행 기록`;
+    }
+    
+    if (!listEl) return;
+    
+    if (historyRecords.length === 0) {
+        listEl.innerHTML = `
+            <div class="text-center py-16 text-slate-500">
+                <div class="w-12 h-12 rounded-2xl bg-slate-800 flex items-center justify-center mx-auto mb-3 text-slate-400">
+                    <i data-lucide="history" class="w-6 h-6"></i>
+                </div>
+                <p class="font-bold text-sm text-slate-400 mb-1">과거 수행 기록이 없습니다.</p>
+                <p class="text-xs text-slate-500">이 종목으로 운동을 완료하면 여기에 날짜별 기록이 쌓입니다.</p>
+            </div>
+        `;
+    } else {
+        listEl.innerHTML = historyRecords.map(h => {
+            const ex = h.exercises.find(e => e.name === exerciseName);
+            if (!ex || !ex.sets) return '';
+            
+            let totalExVol = 0;
+            const setsList = ex.sets.map((s, sIdx) => {
+                const w = parseFloat(s.weight) || 0;
+                const r = parseInt(s.reps) || 0;
+                totalExVol += (w * r);
+                return `
+                    <div class="flex items-center justify-between text-xs py-1.5 border-b border-slate-700/30 last:border-none">
+                        <span class="font-bold text-slate-400">${sIdx + 1}세트</span>
+                        <div class="flex items-center gap-2">
+                            <span class="font-black text-white">${s.weight} <span class="text-[10px] text-slate-400 font-normal">kg</span></span>
+                            <span class="text-slate-500 font-bold">×</span>
+                            <span class="font-black text-brand-300">${s.reps} <span class="text-[10px] text-slate-400 font-normal">회</span></span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            return `
+                <div class="bg-slate-800/80 rounded-2xl p-4 border border-slate-700/50 flex flex-col gap-2 shadow-sm">
+                    <div class="flex items-center justify-between border-b border-slate-700/50 pb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-white text-sm">${h.date}</span>
+                            <span class="text-[10px] text-slate-400 bg-slate-700/50 px-2 py-0.5 rounded-full">${h.name || '운동'}</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs font-black text-emerald-400">${Math.round(totalExVol)} kg</span>
+                            <span class="text-[10px] text-slate-500 ml-0.5">볼륨</span>
+                        </div>
+                    </div>
+                    <div class="bg-slate-900/60 rounded-xl px-3 py-2">
+                        ${setsList}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    lucide.createIcons({ root: listEl });
+    const modal = document.getElementById('exercise-history-modal');
+    if (modal) modal.classList.remove('hidden');
 }
 
 function openSetEditModal(exIndex, setIndex) {
