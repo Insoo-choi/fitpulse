@@ -270,9 +270,13 @@ function openSetEditModal(exIndex, setIndex) {
     const titleEl = document.getElementById('edit-set-title');
     const subTitleEl = document.getElementById('edit-set-subtitle');
     const applySubBtn = document.getElementById('btn-apply-subsequent-sets');
+    const completeBtnText = document.getElementById('btn-save-complete-text');
     
     if (titleEl) titleEl.innerText = exercise.name;
     if (subTitleEl) subTitleEl.innerText = `${setIndex + 1}세트 수정 (총 ${exercise.sets.length}세트)`;
+    if (completeBtnText) {
+        completeBtnText.innerText = set.completed ? '수정사항 저장 & 완료 유지' : '세트 완료 및 저장';
+    }
     
     if (applySubBtn) {
         if (setIndex >= exercise.sets.length - 1) {
@@ -318,6 +322,45 @@ function saveSetEdit(applyToSubsequent = false) {
     closeModal('set-edit-modal');
     saveActiveWorkout();
     updateUI();
+}
+
+function saveAndCompleteSet(applyToSubsequent = false) {
+    if(!currentEditingSet) return;
+    const w = document.getElementById('edit-weight-input').value;
+    const r = document.getElementById('edit-reps-input').value;
+    
+    const exIndex = currentEditingSet.exIndex;
+    const setIndex = currentEditingSet.setIndex;
+    const exercise = state.activeWorkout.exercises[exIndex];
+    
+    if (applyToSubsequent) {
+        for (let s = setIndex; s < exercise.sets.length; s++) {
+            exercise.sets[s].weight = w;
+            exercise.sets[s].reps = r;
+        }
+    } else {
+        const set = exercise.sets[setIndex];
+        set.weight = w;
+        set.reps = r;
+    }
+    
+    const currentSet = exercise.sets[setIndex];
+    const wasCompleted = currentSet.completed;
+    currentSet.completed = true;
+    
+    if (!wasCompleted) {
+        startRestTimer();
+        if (navigator.vibrate) navigator.vibrate(50);
+    }
+    
+    closeModal('set-edit-modal');
+    saveActiveWorkout();
+    updateUI();
+
+    const isAllCompleted = exercise.sets.every(s => s.completed);
+    if (isAllCompleted && !exercise.rpeRated && state.activeWorkout.routineId) {
+        setTimeout(() => openRpeModal(exIndex), 400);
+    }
 }
 
 function removeExercise(i) {
