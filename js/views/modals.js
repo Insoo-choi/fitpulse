@@ -514,3 +514,52 @@ function processPastedRoutine(startNow) {
         if (currentTab === 'workout') switchTab('workout');
     }
 }
+
+// --- Daily Weight Prompt Logic ---
+function openDailyWeightModal() {
+    const input = document.getElementById('daily-weight-input');
+    if (input) {
+        input.value = (parseFloat(state.bodyWeight) || 70).toFixed(1);
+    }
+    const modal = document.getElementById('daily-weight-modal');
+    if (modal) modal.classList.remove('hidden');
+    lucide.createIcons();
+}
+
+function adjustDailyWeight(val) {
+    const input = document.getElementById('daily-weight-input');
+    if (!input) return;
+    let current = parseFloat(input.value) || state.bodyWeight || 70;
+    current = Math.max(20, Math.min(300, current + val));
+    input.value = current.toFixed(1);
+}
+
+function saveDailyWeight() {
+    const input = document.getElementById('daily-weight-input');
+    const newWeight = input ? (parseFloat(input.value) || state.bodyWeight) : state.bodyWeight;
+    
+    state.bodyWeight = newWeight;
+    
+    const today = new Date().toISOString().slice(0, 10);
+    if (!state.weightHistory) state.weightHistory = [];
+    const wIdx = state.weightHistory.findIndex(w => w.date === today);
+    if (wIdx > -1) {
+        state.weightHistory[wIdx].weight = newWeight;
+    } else {
+        state.weightHistory.push({ date: today, weight: newWeight });
+    }
+    
+    saveData();
+    localStorage.setItem('fitpulse_weight_dismissed_date', today);
+    closeModal('daily-weight-modal');
+    
+    if (currentTab === 'report') {
+        renderCharts();
+    }
+}
+
+function dismissDailyWeight() {
+    const today = new Date().toISOString().slice(0, 10);
+    localStorage.setItem('fitpulse_weight_dismissed_date', today);
+    closeModal('daily-weight-modal');
+}

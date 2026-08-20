@@ -8,10 +8,23 @@ window.onload = () => {
         restoreRestTimerState();
     } else {
         switchTab('home');
+        checkDailyWeightPrompt();
     }
     bindDragEvents();
     setupLifecycleListeners();
 };
+
+function checkDailyWeightPrompt() {
+    const today = new Date().toISOString().slice(0, 10);
+    const hasTodayRecord = (state.weightHistory || []).some(w => w.date === today);
+    const dismissedDate = localStorage.getItem('fitpulse_weight_dismissed_date');
+    
+    if (!hasTodayRecord && dismissedDate !== today) {
+        setTimeout(() => {
+            openDailyWeightModal();
+        }, 500);
+    }
+}
 
 function setupLifecycleListeners() {
     document.addEventListener('visibilitychange', () => {

@@ -222,6 +222,44 @@
         </div>
     </div>
 
+    <!-- Daily Weight Check Modal -->
+    <div id="daily-weight-modal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-[70] hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 w-full max-w-sm flex flex-col shadow-2xl">
+            <div class="flex justify-center mb-3">
+                <div class="w-12 h-12 bg-emerald-900/40 border border-emerald-700/50 rounded-2xl flex items-center justify-center text-emerald-400">
+                    <i data-lucide="scale" class="w-6 h-6"></i>
+                </div>
+            </div>
+            <h3 class="text-xl font-black text-white text-center mb-1">오늘의 체중 기록</h3>
+            <p class="text-slate-400 text-xs text-center mb-6">체중을 기록하면 칼로리 소모량과 변화 추이가 더 정확해집니다.</p>
+            
+            <div class="bg-slate-800/80 rounded-2xl p-4 border border-slate-700/60 mb-5 text-center">
+                <label class="block text-[11px] font-bold text-slate-400 mb-2">현재 몸무게 (kg)</label>
+                <div class="flex items-center justify-center gap-2 mb-3">
+                    <input type="number" id="daily-weight-input" step="0.1" inputmode="decimal" class="w-28 bg-slate-900/80 border border-slate-700 focus:border-emerald-500 rounded-xl py-2.5 text-center text-3xl font-black text-white outline-none">
+                    <span class="text-slate-400 font-bold text-lg">kg</span>
+                </div>
+                <div class="grid grid-cols-6 gap-1">
+                    <button onclick="adjustDailyWeight(-1.0)" class="py-1.5 rounded-lg bg-slate-700 text-slate-300 font-bold text-xs active:bg-slate-600">-1</button>
+                    <button onclick="adjustDailyWeight(-0.5)" class="py-1.5 rounded-lg bg-slate-700 text-slate-300 font-bold text-xs active:bg-slate-600">-0.5</button>
+                    <button onclick="adjustDailyWeight(-0.1)" class="py-1.5 rounded-lg bg-slate-700 text-slate-300 font-bold text-xs active:bg-slate-600">-0.1</button>
+                    <button onclick="adjustDailyWeight(0.1)" class="py-1.5 rounded-lg bg-slate-700 text-slate-300 font-bold text-xs active:bg-slate-600">+0.1</button>
+                    <button onclick="adjustDailyWeight(0.5)" class="py-1.5 rounded-lg bg-slate-700 text-slate-300 font-bold text-xs active:bg-slate-600">+0.5</button>
+                    <button onclick="adjustDailyWeight(1.0)" class="py-1.5 rounded-lg bg-slate-700 text-slate-300 font-bold text-xs active:bg-slate-600">+1</button>
+                </div>
+            </div>
+            
+            <div class="flex flex-col gap-2">
+                <button onclick="saveDailyWeight()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 rounded-xl text-base shadow-lg shadow-emerald-500/20 active:scale-95 transition-all">
+                    오늘 체중 저장
+                </button>
+                <button onclick="dismissDailyWeight()" class="w-full py-2.5 text-slate-400 hover:text-slate-200 text-xs font-bold active:scale-95 transition-all">
+                    다음에 하기
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- AI RPE (Progressive Overload) Modal -->
     <div id="rpe-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm z-[70] hidden flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 w-full max-w-sm flex flex-col shadow-2xl">
