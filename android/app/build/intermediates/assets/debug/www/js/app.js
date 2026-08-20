@@ -3,15 +3,29 @@
 window.onload = () => {
     lucide.createIcons();
     loadData();
+    if (typeof updateHeaderProfileInfo === 'function') updateHeaderProfileInfo();
     if (state.activeWorkout) {
         switchTab('workout_active');
         restoreRestTimerState();
     } else {
         switchTab('home');
+        checkDailyWeightPrompt();
     }
     bindDragEvents();
     setupLifecycleListeners();
 };
+
+function checkDailyWeightPrompt() {
+    const today = typeof getTodayDateString === 'function' ? getTodayDateString() : new Date().toISOString().slice(0, 10);
+    const hasTodayRecord = (state.weightHistory || []).some(w => w.date === today);
+    const dismissedDate = localStorage.getItem('fitpulse_weight_dismissed_date');
+    
+    if (!hasTodayRecord && dismissedDate !== today) {
+        setTimeout(() => {
+            openDailyWeightModal();
+        }, 500);
+    }
+}
 
 function setupLifecycleListeners() {
     document.addEventListener('visibilitychange', () => {
@@ -101,8 +115,4 @@ function switchTab(tab) {
     } else if (tab === 'home') {
         renderCalendar();
     }
-}
-
-function connectWatch() {
-    alert("워치 연결은 데모 모드입니다.");
 }

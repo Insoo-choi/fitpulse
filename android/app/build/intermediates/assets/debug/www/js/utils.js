@@ -1,10 +1,30 @@
 // --- Utilities, Classification & Clipboard ---
 
+function getTodayDateString(dateObj = new Date()) {
+    const d = new Date(dateObj);
+    const year = d.getFullYear();
+    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+    const day = d.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
 function getExerciseCategory(name, manualType) {
     if (manualType) return manualType;
     const n = name.toLowerCase();
-    if (n.includes('스쿼트') || n.includes('데드') || n.includes('레그프레스')) return 'large_compound';
-    if (n.includes('벤치') || n.includes('프레스') || n.includes('로우') || n.includes('풀다운') || n.includes('풀업') || n.includes('딥스')) return 'upper_compound';
+    
+    // 1. 대근육 복합 (하체 및 전신 대관절)
+    if (n.includes('스쿼트') || n.includes('데드리프트') || n.includes('데드') || n.includes('레그프레스') || n.includes('레그 프레스') || n.includes('런지') || n.includes('스플릿') || n.includes('힙 쓰러스트') || n.includes('힙쓰러스트') || n.includes('랙풀') || n.includes('rdl')) {
+        return 'large_compound';
+    }
+    
+    // 2. 상체 다관절 복합
+    if (!n.includes('플라이') && !n.includes('레이즈') && !n.includes('컬') && !n.includes('익스텐션') && !n.includes('푸시다운') && !n.includes('킥백')) {
+        if (n.includes('벤치') || n.includes('프레스') || n.includes('ohp') || n.includes('로우') || n.includes('풀다운') || n.includes('풀인') || n.includes('풀업') || n.includes('턱걸이') || n.includes('친업') || n.includes('딥스') || n.includes('푸시업')) {
+            return 'upper_compound';
+        }
+    }
+    
+    // 3. 소근육 및 고립 운동
     return 'isolation';
 }
 
@@ -13,6 +33,347 @@ function getOverloadTypeLabel(type) {
     if (type === 'upper_compound') return '🏋️상체다관절';
     if (type === 'isolation') return '🎯소근육';
     return '분류';
+}
+
+// --- 1RM & Personal Record (PR) Calculations ---
+function calculate1RM(weight, reps) {
+    const w = parseFloat(weight) || 0;
+    const r = parseInt(reps) || 0;
+    if (w <= 0 || r <= 0) return 0;
+    if (r === 1) return w;
+    // Epley formula: 1RM = w * (1 + r / 30)
+    const e1rm = w * (1 + (r / 30));
+    return Math.round(e1rm * 10) / 10;
+}
+
+function getPersonalRecord(exerciseName) {
+    let max1RM = 0;
+    let maxWeight = 0;
+    let maxRepsAtMaxWeight = 0;
+    let prDate = null;
+    
+    (state.history || []).forEach(workout => {
+        if (workout.isRunning || !workout.exercises) return;
+        workout.exercises.forEach(ex => {
+            if (ex.name !== exerciseName || !ex.sets) return;
+            ex.sets.forEach(s => {
+                const w = parseFloat(s.weight) || 0;
+                const r = parseInt(s.reps) || 0;
+                const e1rm = calculate1RM(w, r);
+                if (e1rm > max1RM) {
+                    max1RM = e1rm;
+                    maxWeight = w;
+                    maxRepsAtMaxWeight = r;
+                    prDate = workout.date;
+                }
+            });
+        });
+    });
+    
+    return {
+        max1RM,
+        maxWeight,
+        maxReps: maxRepsAtMaxWeight,
+        date: prDate
+    };
+}
+
+// --- Weekly Muscle Volume Tracker (Hypertrophy Guidelines) ---
+function calculateWeeklyMuscleVolume(historyList = (typeof state !== 'undefined' && state ? state.history : []), referenceDate = new Date()) {
+    const categories = ['가슴', '등', '하체', '어깨', '팔', '코어'];
+    const volumeMap = {
+        '가슴': 0,
+        '등': 0,
+        '하체': 0,
+        '어깨': 0,
+        '팔': 0,
+        '코어': 0
+    };
+    
+    const ref = new Date(referenceDate);
+    const sevenDaysAgo = new Date(ref);
+    sevenDaysAgo.setDate(ref.getDate() - 6);
+    const minDateStr = typeof getTodayDateString === 'function' ? getTodayDateString(sevenDaysAgo) : sevenDaysAgo.toISOString().slice(0, 10);
+    const maxDateStr = typeof getTodayDateString === 'function' ? getTodayDateString(ref) : ref.toISOString().slice(0, 10);
+    
+    (historyList || []).forEach(workout => {
+        if (workout.isRunning || !workout.exercises || !workout.date) return;
+        if (workout.date < minDateStr || workout.date > maxDateStr) return;
+        
+        workout.exercises.forEach(ex => {
+            let cat = '기타';
+            const dbItem = (typeof exerciseDB !== 'undefined' ? exerciseDB : []).find(e => e.name === ex.name);
+            if (dbItem && dbItem.category) {
+                cat = dbItem.category;
+            } else {
+                const name = (ex.name || '').toLowerCase();
+                if (name.includes('스쿼트') || name.includes('레그') || name.includes('런지') || name.includes('힙') || name.includes('카프')) cat = '하체';
+                else if (name.includes('데드') || name.includes('풀업') || name.includes('턱걸이') || name.includes('랫') || name.includes('로우') || name.includes('풀다운')) cat = '등';
+                else if (name.includes('벤치') || name.includes('체스트') || name.includes('딥스') || name.includes('푸시업') || name.includes('펙덱')) cat = '가슴';
+                else if (name.includes('숄더') || name.includes('사레레') || name.includes('레이즈') || name.includes('ohp') || name.includes('프레스') || name.includes('슈러그')) cat = '어깨';
+                else if (name.includes('컬') || name.includes('익스텐션') || name.includes('삼두') || name.includes('이두') || name.includes('푸시다운')) cat = '팔';
+                else if (name.includes('크런치') || name.includes('플랭크') || name.includes('레그레이즈') || name.includes('앱')) cat = '코어';
+                else cat = '가슴';
+            }
+            
+            const setsCount = (ex.sets || []).length;
+            if (volumeMap[cat] !== undefined) {
+                volumeMap[cat] += setsCount;
+            }
+        });
+    });
+    
+    return categories.map(cat => {
+        const sets = volumeMap[cat] || 0;
+        let status = 'low';
+        let statusLabel = '유지 볼륨';
+        let badgeColor = 'text-blue-400 bg-blue-950/80 border-blue-800/50';
+        let barColor = 'from-blue-600 to-blue-400';
+        
+        if (sets >= 10 && sets <= 20) {
+            status = 'optimal';
+            statusLabel = '🔥 최적 성장';
+            badgeColor = 'text-emerald-400 bg-emerald-950/80 border-emerald-800/50';
+            barColor = 'from-emerald-600 to-emerald-400';
+        } else if (sets > 20) {
+            status = 'high';
+            statusLabel = '⚡ 고볼륨';
+            badgeColor = 'text-amber-400 bg-amber-950/80 border-amber-800/50';
+            barColor = 'from-amber-600 to-amber-400';
+        }
+        
+        return {
+            category: cat,
+            sets: sets,
+            status: status,
+            statusLabel: statusLabel,
+            badgeColor: badgeColor,
+            barColor: barColor,
+            percentage: Math.min(Math.round((sets / 20) * 100), 100)
+        };
+    });
+}
+
+// --- Exercise-specific Time Series Data for Progression Charts ---
+function getPerformedExerciseList(historyList = (typeof state !== 'undefined' && state ? state.history : [])) {
+    const set = new Set();
+    (historyList || []).forEach(w => {
+        if (w.isRunning || !w.exercises) return;
+        w.exercises.forEach(e => {
+            if (e.name) set.add(e.name);
+        });
+    });
+    return Array.from(set);
+}
+
+function getExerciseHistoryTimeSeries(exerciseName, historyList = (typeof state !== 'undefined' && state ? state.history : [])) {
+    const list = [];
+    (historyList || []).forEach(workout => {
+        if (workout.isRunning || !workout.exercises || !workout.date) return;
+        const ex = workout.exercises.find(e => e.name === exerciseName);
+        if (!ex || !ex.sets || ex.sets.length === 0) return;
+        
+        let maxWeight = 0;
+        let max1RM = 0;
+        let bestReps = 0;
+        let totalVol = 0;
+        
+        ex.sets.forEach(s => {
+            const w = parseFloat(s.weight) || 0;
+            const r = parseInt(s.reps) || 0;
+            const e1rm = typeof calculate1RM === 'function' ? calculate1RM(w, r) : w;
+            if (e1rm > max1RM) {
+                max1RM = e1rm;
+                maxWeight = w;
+                bestReps = r;
+            }
+            totalVol += (w * r);
+        });
+        
+        list.push({
+            date: workout.date,
+            maxWeight: maxWeight,
+            max1RM: max1RM,
+            bestReps: bestReps,
+            totalVolume: totalVol
+        });
+    });
+    
+    return list.sort((a, b) => (a.date > b.date ? 1 : -1));
+}
+
+// --- Warm-up Pyramid Set Calculation ---
+function generateWarmupSets(workingWeight) {
+    const w = parseFloat(workingWeight) || 0;
+    if (w <= 0) return [];
+    
+    const roundToPlate = (val) => (Math.round(val / 2.5) * 2.5).toFixed(1).replace(/\.0$/, '');
+    
+    if (w >= 50) {
+        return [
+            { weight: roundToPlate(Math.max(20, w * 0.4)), reps: '10', completed: false, isWarmup: true },
+            { weight: roundToPlate(w * 0.6), reps: '5', completed: false, isWarmup: true },
+            { weight: roundToPlate(w * 0.8), reps: '2', completed: false, isWarmup: true }
+        ];
+    } else if (w >= 20) {
+        return [
+            { weight: roundToPlate(w * 0.5), reps: '8', completed: false, isWarmup: true },
+            { weight: roundToPlate(w * 0.75), reps: '4', completed: false, isWarmup: true }
+        ];
+    } else {
+        return [
+            { weight: roundToPlate(w * 0.6), reps: '8', completed: false, isWarmup: true }
+        ];
+    }
+}
+
+// --- Barbell Plate Calculator ---
+function calculatePlates(targetWeight, barWeight = 20, availablePlates = [20, 15, 10, 5, 2.5, 1.25]) {
+    const target = parseFloat(targetWeight) || 0;
+    const bar = parseFloat(barWeight) || 20;
+    if (target <= bar) {
+        return { barWeight: bar, targetWeight: target, sideWeight: 0, plates: [], remainder: 0 };
+    }
+    
+    let totalSideWeight = (target - bar) / 2;
+    let remainingSideWeight = totalSideWeight;
+    const plates = [];
+    
+    const sortedPlates = availablePlates.slice().sort((a, b) => b - a);
+    sortedPlates.forEach(plate => {
+        const count = Math.floor((remainingSideWeight + 0.0001) / plate);
+        if (count > 0) {
+            plates.push({ plate, count });
+            remainingSideWeight = Math.round((remainingSideWeight - plate * count) * 100) / 100;
+        }
+    });
+    
+    return {
+        barWeight: bar,
+        targetWeight: target,
+        sideWeight: totalSideWeight,
+        plates: plates,
+        remainder: remainingSideWeight > 0.05 ? remainingSideWeight : 0
+    };
+}
+
+// --- Workout Target Muscle Tags for Calendar/History ---
+function getWorkoutMuscleTags(workout) {
+    if (!workout || !workout.exercises || workout.exercises.length === 0) return [];
+    
+    const tagSet = new Set();
+    workout.exercises.forEach(ex => {
+        let cat = '기타';
+        const dbItem = (typeof exerciseDB !== 'undefined' ? exerciseDB : []).find(e => e.name === ex.name);
+        if (dbItem && dbItem.category) {
+            cat = dbItem.category;
+        } else {
+            const name = (ex.name || '').toLowerCase();
+            if (name.includes('스쿼트') || name.includes('레그') || name.includes('런지') || name.includes('힙') || name.includes('카프')) cat = '하체';
+            else if (name.includes('데드') || name.includes('풀업') || name.includes('턱걸이') || name.includes('랫') || name.includes('로우') || name.includes('풀다운')) cat = '등';
+            else if (name.includes('벤치') || name.includes('체스트') || name.includes('딥스') || name.includes('푸시업') || name.includes('펙덱')) cat = '가슴';
+            else if (name.includes('숄더') || name.includes('사레레') || name.includes('레이즈') || name.includes('ohp') || name.includes('프레스') || name.includes('슈러그')) cat = '어깨';
+            else if (name.includes('컬') || name.includes('익스텐션') || name.includes('삼두') || name.includes('이두') || name.includes('푸시다운')) cat = '팔';
+            else if (name.includes('크런치') || name.includes('플랭크') || name.includes('레그레이즈') || name.includes('앱')) cat = '코어';
+            else cat = '가슴';
+        }
+        tagSet.add(cat);
+    });
+    
+    return Array.from(tagSet).slice(0, 3);
+}
+
+// --- Delete Workout History Record ---
+function deleteWorkoutHistory(workoutId) {
+    if (!state || !state.history || !workoutId) return false;
+    const idx = state.history.findIndex(h => h.id === workoutId);
+    if (idx === -1) return false;
+    state.history.splice(idx, 1);
+    if (typeof saveData === 'function') saveData();
+    return true;
+}
+
+// --- Daily Protein Tracker ---
+function getDailyProteinData(dateStr = (typeof getTodayDateString === 'function' ? getTodayDateString() : new Date().toISOString().slice(0, 10))) {
+    if (!state) return { target: 126, total: 0, logs: [], percentage: 0 };
+    if (!state.proteinHistory) state.proteinHistory = [];
+    let record = state.proteinHistory.find(p => p.date === dateStr);
+    
+    const bw = parseFloat(state.bodyWeight) || 70;
+    const target = Math.round(bw * 1.8);
+    
+    if (!record) {
+        return {
+            date: dateStr,
+            target: target,
+            total: 0,
+            logs: [],
+            percentage: 0
+        };
+    }
+    
+    const total = (record.logs || []).reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+    record.total = total;
+    record.target = target;
+    
+    return {
+        date: dateStr,
+        target: target,
+        total: total,
+        logs: record.logs || [],
+        percentage: Math.min(Math.round((total / (target || 1)) * 100), 100)
+    };
+}
+
+function addProteinEntry(dateStr, amount, note = '') {
+    const amt = parseFloat(amount);
+    if (!amt || amt <= 0) return null;
+    
+    if (!state) return null;
+    if (!state.proteinHistory) state.proteinHistory = [];
+    let record = state.proteinHistory.find(p => p.date === dateStr);
+    
+    const now = new Date();
+    const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    
+    const entry = {
+        id: Date.now().toString() + '_' + Math.random().toString(36).slice(2, 6),
+        amount: amt,
+        time: timeStr,
+        note: note
+    };
+    
+    if (record) {
+        if (!record.logs) record.logs = [];
+        record.logs.push(entry);
+        record.total = record.logs.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+    } else {
+        record = {
+            date: dateStr,
+            target: Math.round((parseFloat(state.bodyWeight) || 70) * 1.8),
+            total: amt,
+            logs: [entry]
+        };
+        state.proteinHistory.push(record);
+    }
+    
+    if (typeof saveData === 'function') saveData();
+    return entry;
+}
+
+function removeProteinEntry(dateStr, entryId) {
+    if (!state || !state.proteinHistory || !entryId) return false;
+    const record = state.proteinHistory.find(p => p.date === dateStr);
+    if (!record || !record.logs) return false;
+    
+    const idx = record.logs.findIndex(item => item.id === entryId);
+    if (idx === -1) return false;
+    
+    record.logs.splice(idx, 1);
+    record.total = record.logs.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+    
+    if (typeof saveData === 'function') saveData();
+    return true;
 }
 
 function copyWorkoutSummary() {
@@ -69,6 +430,77 @@ function fallbackCopyText(text) {
 function closeModal(id) {
     const el = document.getElementById(id);
     if (el) el.classList.add('hidden');
+}
+
+// --- Backup & Restore (JSON Export / Import) ---
+
+function exportFitPulseData() {
+    const today = typeof getTodayDateString === 'function' ? getTodayDateString() : new Date().toISOString().slice(0, 10);
+    const backupData = {
+        app: 'FitPulse Pro',
+        version: '2.0',
+        exportedAt: new Date().toISOString(),
+        state: state
+    };
+    
+    const dataStr = JSON.stringify(backupData, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `fitpulse_backup_${today}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function importFitPulseData(jsonString) {
+    try {
+        const parsed = JSON.parse(jsonString);
+        const importedState = parsed.state || parsed;
+        
+        if (!importedState || typeof importedState !== 'object') {
+            return { success: false, message: '올바른 백업 데이터 형식이 아닙니다.' };
+        }
+        
+        if (!Array.isArray(importedState.routines) || !Array.isArray(importedState.history)) {
+            return { success: false, message: '백업 데이터에 필수 항목(루틴, 기록)이 누락되었습니다.' };
+        }
+        
+        state.routines = importedState.routines || [];
+        state.history = importedState.history || [];
+        state.weightHistory = importedState.weightHistory || [];
+        state.bodyWeight = parseFloat(importedState.bodyWeight) || 70;
+        state.height = parseFloat(importedState.height) || 175;
+        state.minIncrement = parseFloat(importedState.minIncrement) || 2.5;
+        state.defaultRestTime = parseInt(importedState.defaultRestTime) || 90;
+        state.workoutCount = parseInt(importedState.workoutCount) || state.history.length;
+        
+        saveData();
+        return { success: true, message: `✅ 백업 데이터가 성공적으로 복원되었습니다! (루틴 ${state.routines.length}개, 기록 ${state.history.length}개)` };
+    } catch (e) {
+        return { success: false, message: 'JSON 파일을 파싱하는 중 오류가 발생했습니다: ' + e.message };
+    }
+}
+
+function handleBackupFileSelect(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const result = importFitPulseData(e.target.result);
+        alert(result.message);
+        if (result.success) {
+            if (typeof switchTab === 'function') {
+                switchTab(currentTab || 'home');
+            }
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
 }
 
 // --- Rest Timer ---

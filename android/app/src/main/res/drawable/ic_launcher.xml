@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#0f172a"
+        android:pathData="M0,0h108v108h-108z" />
+    <path
+        android:fillColor="#1e3a8a"
+        android:pathData="M0,0L108,108L0,108Z" />
+    <path
+        android:fillColor="#3b82f6"
+        android:alpha="0.2"
+        android:pathData="M54,54m-45,0a45,45 0,1 1,90 0a45,45 0,1 1,-90 0" />
+    
+    <!-- Central Dumbbell Left Plates -->
+    <path
+        android:fillColor="#3b82f6"
+        android:pathData="M35,36 L39,36 A2,2 0 0,1 41,38 L41,70 A2,2 0 0,1 39,72 L35,72 A2,2 0 0,1 33,70 L33,38 A2,2 0 0,1 35,36 Z" />
+    <path
+        android:fillColor="#60a5fa"
+        android:pathData="M27,42 L31,42 A2,2 0 0,1 33,44 L33,64 A2,2 0 0,1 31,66 L27,66 A2,2 0 0,1 25,64 L25,44 A2,2 0 0,1 27,42 Z" />
+
+    <!-- Central Dumbbell Right Plates -->
+    <path
+        android:fillColor="#3b82f6"
+        android:pathData="M69,36 L73,36 A2,2 0 0,1 75,38 L75,70 A2,2 0 0,1 73,72 L69,72 A2,2 0 0,1 67,70 L67,38 A2,2 0 0,1 69,36 Z" />
+    <path
+        android:fillColor="#60a5fa"
+        android:pathData="M77,42 L81,42 A2,2 0 0,1 83,44 L83,64 A2,2 0 0,1 81,66 L77,66 A2,2 0 0,1 75,64 L75,44 A2,2 0 0,1 77,42 Z" />
+
+    <!-- Dumbbell Bar -->
+    <path
+        android:fillColor="#f8fafc"
+        android:pathData="M41,51 L67,51 A3,3 0 0,1 70,54 L70,54 A3,3 0 0,1 67,57 L41,57 A3,3 0 0,1 38,54 L38,54 A3,3 0 0,1 41,51 Z" />
+
+    <!-- Pulse ECG Line -->
+    <path
+        android:strokeColor="#38bdf8"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000"
+        android:pathData="M20,54 L32,54 L38,42 L46,66 L54,34 L62,64 L68,48 L74,54 L88,54" />
+</vector>

@@ -109,9 +109,9 @@ MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\insoo\.gradle\cach
 	android:label
 		ADDED from C:\Users\insoo\OneDrive\바탕 화면\fitpulse\android\app\src\main\AndroidManifest.xml:12:9-41
 	android:roundIcon
-		ADDED from C:\Users\insoo\OneDrive\바탕 화면\fitpulse\android\app\src\main\AndroidManifest.xml:13:9-61
+		ADDED from C:\Users\insoo\OneDrive\바탕 화면\fitpulse\android\app\src\main\AndroidManifest.xml:13:9-54
 	android:icon
-		ADDED from C:\Users\insoo\OneDrive\바탕 화면\fitpulse\android\app\src\main\AndroidManifest.xml:11:9-56
+		ADDED from C:\Users\insoo\OneDrive\바탕 화면\fitpulse\android\app\src\main\AndroidManifest.xml:11:9-43
 	android:allowBackup
 		ADDED from C:\Users\insoo\OneDrive\바탕 화면\fitpulse\android\app\src\main\AndroidManifest.xml:10:9-35
 	android:theme
