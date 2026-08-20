@@ -579,10 +579,37 @@ function confirmRoutineDiff(updateOriginal) {
     if (updateOriginal && state.activeWorkout.routineId) {
         const origRoutine = state.routines.find(r => r.id === state.activeWorkout.routineId);
         if (origRoutine) {
-            origRoutine.exercises = state.activeWorkout.exercises.map(e => ({
-                name: e.name,
-                sets: e.sets.map(s => ({ weight: s.weight, reps: s.reps }))
-            }));
+            origRoutine.exercises = state.activeWorkout.exercises.map(activeEx => {
+                const existingOrigEx = origRoutine.exercises.find(oe => oe.name === activeEx.name);
+                
+                // If this exercise has been RPE rated, preserve the progressive overload targets already updated in origRoutine
+                if (activeEx.rpeRated && existingOrigEx && existingOrigEx.sets && existingOrigEx.sets.length > 0) {
+                    const targetSets = [];
+                    for (let i = 0; i < activeEx.sets.length; i++) {
+                        if (existingOrigEx.sets[i]) {
+                            targetSets.push({
+                                weight: existingOrigEx.sets[i].weight,
+                                reps: existingOrigEx.sets[i].reps
+                            });
+                        } else {
+                            const lastSet = existingOrigEx.sets[existingOrigEx.sets.length - 1] || activeEx.sets[i];
+                            targetSets.push({
+                                weight: lastSet.weight || activeEx.sets[i].weight,
+                                reps: lastSet.reps || activeEx.sets[i].reps
+                            });
+                        }
+                    }
+                    return {
+                        name: activeEx.name,
+                        sets: targetSets
+                    };
+                } else {
+                    return {
+                        name: activeEx.name,
+                        sets: activeEx.sets.map(s => ({ weight: s.weight, reps: s.reps }))
+                    };
+                }
+            });
             saveData();
         }
     }
