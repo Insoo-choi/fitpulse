@@ -264,10 +264,28 @@ function submitRPE(score) {
 
 function openSetEditModal(exIndex, setIndex) {
     currentEditingSet = {exIndex, setIndex};
-    const set = state.activeWorkout.exercises[exIndex].sets[setIndex];
+    const exercise = state.activeWorkout.exercises[exIndex];
+    const set = exercise.sets[setIndex];
+    
+    const titleEl = document.getElementById('edit-set-title');
+    const subTitleEl = document.getElementById('edit-set-subtitle');
+    const applySubBtn = document.getElementById('btn-apply-subsequent-sets');
+    
+    if (titleEl) titleEl.innerText = exercise.name;
+    if (subTitleEl) subTitleEl.innerText = `${setIndex + 1}세트 수정 (총 ${exercise.sets.length}세트)`;
+    
+    if (applySubBtn) {
+        if (setIndex >= exercise.sets.length - 1) {
+            applySubBtn.classList.add('hidden');
+        } else {
+            applySubBtn.classList.remove('hidden');
+        }
+    }
+    
     document.getElementById('edit-weight-input').value = set.weight;
     document.getElementById('edit-reps-input').value = set.reps;
     document.getElementById('set-edit-modal').classList.remove('hidden');
+    lucide.createIcons();
 }
 
 function adjustEditVal(field, val) {
@@ -280,14 +298,22 @@ function adjustEditVal(field, val) {
     input.value = current;
 }
 
-function saveSetEdit() {
+function saveSetEdit(applyToSubsequent = false) {
     if(!currentEditingSet) return;
     const w = document.getElementById('edit-weight-input').value;
     const r = document.getElementById('edit-reps-input').value;
     
-    const set = state.activeWorkout.exercises[currentEditingSet.exIndex].sets[currentEditingSet.setIndex];
-    set.weight = w;
-    set.reps = r;
+    const exercise = state.activeWorkout.exercises[currentEditingSet.exIndex];
+    if (applyToSubsequent) {
+        for (let s = currentEditingSet.setIndex; s < exercise.sets.length; s++) {
+            exercise.sets[s].weight = w;
+            exercise.sets[s].reps = r;
+        }
+    } else {
+        const set = exercise.sets[currentEditingSet.setIndex];
+        set.weight = w;
+        set.reps = r;
+    }
     
     closeModal('set-edit-modal');
     saveActiveWorkout();
