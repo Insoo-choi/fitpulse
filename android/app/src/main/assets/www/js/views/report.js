@@ -41,6 +41,9 @@ function renderReportView() {
                 </div>
             </div>
 
+            <!-- Weekly Muscle Volume Landscape -->
+            ${renderWeeklyVolumeLandscape()}
+
             <div class="bg-slate-800/80 rounded-3xl p-5 border border-slate-700/50 shadow-xl mb-6">
                 <select id="chart-type-selector" class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl py-3 px-4 outline-none focus:border-brand-500 font-bold mb-4 appearance-none" onchange="renderCharts()">
                     <option value="volume">📊 [전체] 날짜별 총 운동 볼륨 (kg)</option>
@@ -49,6 +52,39 @@ function renderReportView() {
                 <div class="relative h-64 w-full">
                     <canvas id="growthChart"></canvas>
                 </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderWeeklyVolumeLandscape() {
+    const volumes = typeof calculateWeeklyMuscleVolume === 'function' ? calculateWeeklyMuscleVolume() : [];
+    
+    return `
+        <div class="bg-slate-800/80 rounded-3xl p-5 border border-slate-700/50 shadow-xl mb-6">
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="text-sm font-black text-white flex items-center gap-2">
+                    <i data-lucide="bar-chart-3" class="w-4 h-4 text-brand-400"></i> 주간 부위별 유효 세트 수
+                </h3>
+                <span class="text-[10px] text-slate-400 font-bold bg-slate-900 px-2.5 py-1 rounded-full border border-slate-700">최근 7일 기준</span>
+            </div>
+            <p class="text-[11px] text-slate-400 mb-4">💡 과학적 권장 볼륨: 부위당 주 10~20세트 (Jeff Nippard & RP 기준)</p>
+            
+            <div class="space-y-3">
+                ${volumes.map(v => `
+                    <div>
+                        <div class="flex justify-between items-center text-xs font-bold mb-1">
+                            <span class="text-slate-200">${v.category}</span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] px-1.5 py-0.5 rounded font-black border ${v.badgeColor}">${v.statusLabel}</span>
+                                <span class="text-slate-300 font-black">${v.sets} <span class="text-[10px] text-slate-500 font-normal">/ 10~20세트</span></span>
+                            </div>
+                        </div>
+                        <div class="h-2 bg-slate-900 rounded-full overflow-hidden border border-slate-700/50">
+                            <div class="h-full bg-gradient-to-r ${v.barColor} transition-all duration-500" style="width: ${v.percentage}%"></div>
+                        </div>
+                    </div>
+                `).join('')}
             </div>
         </div>
     `;

@@ -78,6 +78,82 @@ function getPersonalRecord(exerciseName) {
     };
 }
 
+// --- Weekly Muscle Volume Tracker (Hypertrophy Guidelines) ---
+function calculateWeeklyMuscleVolume(historyList = (typeof state !== 'undefined' && state ? state.history : []), referenceDate = new Date()) {
+    const categories = ['가슴', '등', '하체', '어깨', '팔', '코어'];
+    const volumeMap = {
+        '가슴': 0,
+        '등': 0,
+        '하체': 0,
+        '어깨': 0,
+        '팔': 0,
+        '코어': 0
+    };
+    
+    const ref = new Date(referenceDate);
+    const sevenDaysAgo = new Date(ref);
+    sevenDaysAgo.setDate(ref.getDate() - 6);
+    const minDateStr = typeof getTodayDateString === 'function' ? getTodayDateString(sevenDaysAgo) : sevenDaysAgo.toISOString().slice(0, 10);
+    const maxDateStr = typeof getTodayDateString === 'function' ? getTodayDateString(ref) : ref.toISOString().slice(0, 10);
+    
+    (historyList || []).forEach(workout => {
+        if (workout.isRunning || !workout.exercises || !workout.date) return;
+        if (workout.date < minDateStr || workout.date > maxDateStr) return;
+        
+        workout.exercises.forEach(ex => {
+            let cat = '기타';
+            const dbItem = (typeof exerciseDB !== 'undefined' ? exerciseDB : []).find(e => e.name === ex.name);
+            if (dbItem && dbItem.category) {
+                cat = dbItem.category;
+            } else {
+                const name = (ex.name || '').toLowerCase();
+                if (name.includes('스쿼트') || name.includes('레그') || name.includes('런지') || name.includes('힙') || name.includes('카프')) cat = '하체';
+                else if (name.includes('데드') || name.includes('풀업') || name.includes('턱걸이') || name.includes('랫') || name.includes('로우') || name.includes('풀다운')) cat = '등';
+                else if (name.includes('벤치') || name.includes('체스트') || name.includes('딥스') || name.includes('푸시업') || name.includes('펙덱')) cat = '가슴';
+                else if (name.includes('숄더') || name.includes('사레레') || name.includes('레이즈') || name.includes('ohp') || name.includes('프레스') || name.includes('슈러그')) cat = '어깨';
+                else if (name.includes('컬') || name.includes('익스텐션') || name.includes('삼두') || name.includes('이두') || name.includes('푸시다운')) cat = '팔';
+                else if (name.includes('크런치') || name.includes('플랭크') || name.includes('레그레이즈') || name.includes('앱')) cat = '코어';
+                else cat = '가슴';
+            }
+            
+            const setsCount = (ex.sets || []).length;
+            if (volumeMap[cat] !== undefined) {
+                volumeMap[cat] += setsCount;
+            }
+        });
+    });
+    
+    return categories.map(cat => {
+        const sets = volumeMap[cat] || 0;
+        let status = 'low';
+        let statusLabel = '유지 볼륨';
+        let badgeColor = 'text-blue-400 bg-blue-950/80 border-blue-800/50';
+        let barColor = 'from-blue-600 to-blue-400';
+        
+        if (sets >= 10 && sets <= 20) {
+            status = 'optimal';
+            statusLabel = '🔥 최적 성장';
+            badgeColor = 'text-emerald-400 bg-emerald-950/80 border-emerald-800/50';
+            barColor = 'from-emerald-600 to-emerald-400';
+        } else if (sets > 20) {
+            status = 'high';
+            statusLabel = '⚡ 고볼륨';
+            badgeColor = 'text-amber-400 bg-amber-950/80 border-amber-800/50';
+            barColor = 'from-amber-600 to-amber-400';
+        }
+        
+        return {
+            category: cat,
+            sets: sets,
+            status: status,
+            statusLabel: statusLabel,
+            badgeColor: badgeColor,
+            barColor: barColor,
+            percentage: Math.min(Math.round((sets / 20) * 100), 100)
+        };
+    });
+}
+
 function copyWorkoutSummary() {
     const workout = lastFinishedWorkout || (state.history.length > 0 ? state.history[state.history.length - 1] : null);
     if (!workout) {
