@@ -536,8 +536,8 @@ function finalizeWorkout() {
     confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
     
     // Clean up
-    localStorage.removeItem('fitpulse_active');
     state.activeWorkout = null;
+    saveData();
     clearInterval(workoutTimerInterval);
     skipRestTime();
 }
@@ -553,7 +553,7 @@ function promptAbortWorkout() {
 
 function cancelWorkout() {
     state.activeWorkout = null;
-    localStorage.removeItem('fitpulse_active');
+    saveData();
     clearInterval(workoutTimerInterval);
     skipRestTime();
     closeModal('workout-action-modal');
