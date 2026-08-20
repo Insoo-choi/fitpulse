@@ -257,6 +257,32 @@ function calculatePlates(targetWeight, barWeight = 20, availablePlates = [20, 15
     };
 }
 
+// --- Workout Target Muscle Tags for Calendar/History ---
+function getWorkoutMuscleTags(workout) {
+    if (!workout || !workout.exercises || workout.exercises.length === 0) return [];
+    
+    const tagSet = new Set();
+    workout.exercises.forEach(ex => {
+        let cat = '기타';
+        const dbItem = (typeof exerciseDB !== 'undefined' ? exerciseDB : []).find(e => e.name === ex.name);
+        if (dbItem && dbItem.category) {
+            cat = dbItem.category;
+        } else {
+            const name = (ex.name || '').toLowerCase();
+            if (name.includes('스쿼트') || name.includes('레그') || name.includes('런지') || name.includes('힙') || name.includes('카프')) cat = '하체';
+            else if (name.includes('데드') || name.includes('풀업') || name.includes('턱걸이') || name.includes('랫') || name.includes('로우') || name.includes('풀다운')) cat = '등';
+            else if (name.includes('벤치') || name.includes('체스트') || name.includes('딥스') || name.includes('푸시업') || name.includes('펙덱')) cat = '가슴';
+            else if (name.includes('숄더') || name.includes('사레레') || name.includes('레이즈') || name.includes('ohp') || name.includes('프레스') || name.includes('슈러그')) cat = '어깨';
+            else if (name.includes('컬') || name.includes('익스텐션') || name.includes('삼두') || name.includes('이두') || name.includes('푸시다운')) cat = '팔';
+            else if (name.includes('크런치') || name.includes('플랭크') || name.includes('레그레이즈') || name.includes('앱')) cat = '코어';
+            else cat = '가슴';
+        }
+        tagSet.add(cat);
+    });
+    
+    return Array.from(tagSet).slice(0, 3);
+}
+
 function copyWorkoutSummary() {
     const workout = lastFinishedWorkout || (state.history.length > 0 ? state.history[state.history.length - 1] : null);
     if (!workout) {

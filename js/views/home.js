@@ -75,13 +75,23 @@ function renderCalendar() {
         const dateStr = `${year}-${(month+1).toString().padStart(2,'0')}-${i.toString().padStart(2,'0')}`;
         
         const workouts = state.history.filter(h => h.date.startsWith(dateStr));
-        const hasGym = workouts.some(h => !h.isRunning);
+        const gymWorkouts = workouts.filter(h => !h.isRunning);
+        const hasGym = gymWorkouts.length > 0;
         const hasRun = workouts.some(h => h.isRunning);
+        
+        let tagsPreview = '';
+        if (hasGym) {
+            const firstGym = gymWorkouts[0];
+            const tags = typeof getWorkoutMuscleTags === 'function' ? getWorkoutMuscleTags(firstGym) : [];
+            if (tags.length > 0) {
+                tagsPreview = `<div class="text-[8px] leading-tight text-emerald-400 font-black truncate max-w-full px-0.5 mt-0.5">${tags[0]}</div>`;
+            }
+        }
         
         let dotHtml = '';
         if(hasGym && hasRun) {
-            dotHtml = `<div class="flex gap-1 mt-0.5 z-10"><div class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-sm"></div><div class="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-sm"></div></div>`;
-        } else if(hasGym) {
+            dotHtml = `<div class="flex gap-0.5 mt-0.5 z-10"><div class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-sm"></div><div class="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-sm"></div></div>`;
+        } else if(hasGym && !tagsPreview) {
             dotHtml = `<div class="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-0.5 z-10 shadow-sm"></div>`;
         } else if(hasRun) {
             dotHtml = `<div class="w-1.5 h-1.5 rounded-full bg-blue-500 mt-0.5 z-10 shadow-sm"></div>`;
@@ -90,10 +100,10 @@ function renderCalendar() {
         const isToday = (i === now.getDate());
         
         html += `
-            <div class="aspect-square flex flex-col items-center justify-center relative cursor-pointer active:scale-90 transition-transform" onclick="showDateInfo('${dateStr}')">
+            <div class="min-h-[44px] flex flex-col items-center justify-center relative cursor-pointer active:scale-90 transition-transform py-1 rounded-xl hover:bg-slate-700/40" onclick="showDateInfo('${dateStr}')">
                 <span class="text-xs font-bold ${isToday ? 'text-white' : 'text-slate-400'} z-10">${i}</span>
-                ${isToday ? `<div class="absolute inset-1 bg-slate-700 rounded-lg -z-0 border border-slate-600"></div>` : ''}
-                ${dotHtml}
+                ${isToday ? `<div class="absolute inset-0.5 bg-slate-700 rounded-xl -z-0 border border-slate-600"></div>` : ''}
+                ${tagsPreview || dotHtml}
             </div>
         `;
     }
@@ -113,8 +123,14 @@ function showDateInfo(dateStr) {
                 </div>`;
             } else {
                 const exList = (w.exercises || []).map(e => e.name).join(', ');
+                const tags = typeof getWorkoutMuscleTags === 'function' ? getWorkoutMuscleTags(w) : [];
+                const tagsHtml = tags.map(t => `<span class="text-[10px] bg-emerald-950/80 border border-emerald-700/50 text-emerald-300 font-black px-2 py-0.5 rounded-md">${t}</span>`).join(' ');
+                
                 return `<div class="bg-emerald-900/30 border border-emerald-800/50 p-3 rounded-xl mb-2">
-                    <div class="font-bold text-emerald-400 text-sm mb-1">💪 ${w.name || '운동'} (${w.duration}분)</div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <div class="font-bold text-emerald-400 text-sm">💪 ${w.name || '운동'} (${w.duration}분)</div>
+                        <div class="flex gap-1">${tagsHtml}</div>
+                    </div>
                     <div class="text-xs text-slate-300">총 볼륨: ${w.totalVolume}kg | ${(w.exercises||[]).length}종목</div>
                     <div class="text-[10px] text-slate-500 mt-1 truncate">${exList}</div>
                 </div>`;
