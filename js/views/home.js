@@ -117,9 +117,14 @@ function showDateInfo(dateStr) {
     if(workouts.length > 0) {
         wInfo = workouts.map(w => {
             if(w.isRunning) {
-                return `<div class="bg-blue-900/30 border border-blue-800/50 p-3 rounded-xl mb-2">
-                    <div class="font-bold text-blue-400 text-sm mb-1">🏃 러닝 (${w.duration}분)</div>
-                    <div class="text-xs text-slate-300">거리: ${w.distance || 0}km | 페이스: ${w.pace || '-'}</div>
+                return `<div class="bg-blue-900/30 border border-blue-800/50 p-3 rounded-xl mb-2 flex items-start justify-between gap-2">
+                    <div class="min-w-0 flex-1">
+                        <div class="font-bold text-blue-400 text-sm mb-1">🏃 러닝 (${w.duration}분)</div>
+                        <div class="text-xs text-slate-300">거리: ${w.distance || 0}km | 페이스: ${w.pace || '-'}</div>
+                    </div>
+                    <button type="button" onclick="removeWorkoutRecord('${w.id}', '${dateStr}')" title="기록 삭제" class="p-1.5 rounded-lg bg-slate-800/80 hover:bg-rose-950 text-slate-400 hover:text-rose-400 border border-slate-700/60 active:scale-90 transition-all shrink-0">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
                 </div>`;
             } else {
                 const exList = (w.exercises || []).map(e => e.name).join(', ');
@@ -128,8 +133,13 @@ function showDateInfo(dateStr) {
                 
                 return `<div class="bg-emerald-900/30 border border-emerald-800/50 p-3 rounded-xl mb-2">
                     <div class="flex items-center justify-between mb-1.5">
-                        <div class="font-bold text-emerald-400 text-sm">💪 ${w.name || '운동'} (${w.duration}분)</div>
-                        <div class="flex gap-1">${tagsHtml}</div>
+                        <div class="font-bold text-emerald-400 text-sm truncate mr-2">💪 ${w.name || '운동'} (${w.duration}분)</div>
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            ${tagsHtml}
+                            <button type="button" onclick="removeWorkoutRecord('${w.id}', '${dateStr}')" title="기록 삭제" class="p-1 rounded-lg bg-slate-800/80 hover:bg-rose-950 text-slate-400 hover:text-rose-400 border border-slate-700/60 active:scale-90 transition-all ml-1">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
                     </div>
                     <div class="text-xs text-slate-300">총 볼륨: ${w.totalVolume}kg | ${(w.exercises||[]).length}종목</div>
                     <div class="text-[10px] text-slate-500 mt-1 truncate">${exList}</div>
@@ -163,6 +173,21 @@ function showDateInfo(dateStr) {
     `;
     document.body.appendChild(modal);
     lucide.createIcons({root: modal});
+}
+
+function removeWorkoutRecord(workoutId, dateStr) {
+    if (!workoutId) return;
+    if (!confirm('정말로 이 운동 기록을 삭제하시겠습니까? (삭제 후 복구할 수 없습니다)')) return;
+    
+    if (typeof deleteWorkoutHistory === 'function') {
+        deleteWorkoutHistory(workoutId);
+    }
+    
+    const oldModal = document.getElementById('date-info-modal');
+    if (oldModal) oldModal.remove();
+    
+    renderCalendar();
+    showDateInfo(dateStr);
 }
 
 function saveRunningRecord(dateStr) {

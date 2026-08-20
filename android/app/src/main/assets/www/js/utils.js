@@ -283,6 +283,16 @@ function getWorkoutMuscleTags(workout) {
     return Array.from(tagSet).slice(0, 3);
 }
 
+// --- Delete Workout History Record ---
+function deleteWorkoutHistory(workoutId) {
+    if (!state || !state.history || !workoutId) return false;
+    const idx = state.history.findIndex(h => h.id === workoutId);
+    if (idx === -1) return false;
+    state.history.splice(idx, 1);
+    if (typeof saveData === 'function') saveData();
+    return true;
+}
+
 function copyWorkoutSummary() {
     const workout = lastFinishedWorkout || (state.history.length > 0 ? state.history[state.history.length - 1] : null);
     if (!workout) {
