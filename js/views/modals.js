@@ -261,6 +261,88 @@ function openRoutineExerciseAddModal() {
     renderExerciseList();
 }
 
+function openRoutineManageModal() {
+    renderRoutineManageList();
+    const modal = document.getElementById('routine-manage-modal');
+    if (modal) modal.classList.remove('hidden');
+}
+
+function renderRoutineManageList() {
+    const listEl = document.getElementById('routine-manage-list');
+    if (!listEl) return;
+    
+    if (state.routines.length === 0) {
+        listEl.innerHTML = `
+            <div class="text-center py-16 text-slate-500">
+                <div class="w-12 h-12 rounded-2xl bg-slate-800 flex items-center justify-center mx-auto mb-3 text-slate-400">
+                    <i data-lucide="dumbbell" class="w-6 h-6"></i>
+                </div>
+                <p class="font-bold text-sm text-slate-400 mb-1">등록된 루틴이 없습니다.</p>
+                <p class="text-xs text-slate-500 mb-4">새 루틴을 생성하거나 텍스트를 붙여넣어 시작하세요.</p>
+                <div class="flex justify-center gap-2">
+                    <button onclick="createNewRoutineFromManage()" class="text-xs bg-brand-600 text-white font-bold px-4 py-2 rounded-xl active:scale-95 transition-all">+ 새 루틴</button>
+                    <button onclick="openRoutinePasteFromManage()" class="text-xs bg-slate-800 text-slate-300 font-bold px-4 py-2 rounded-xl active:scale-95 transition-all">붙여넣기</button>
+                </div>
+            </div>
+        `;
+        lucide.createIcons({ root: listEl });
+        return;
+    }
+    
+    listEl.innerHTML = state.routines.map(r => `
+        <div class="bg-slate-800/80 rounded-2xl p-4 border border-slate-700/50 flex flex-col gap-3">
+            <div class="flex items-start justify-between">
+                <div class="flex-1 min-w-0 pr-3 cursor-pointer" onclick="startRoutineFromManage('${r.id}')">
+                    <div class="flex items-center gap-2">
+                        <h4 class="font-bold text-white text-base truncate">${r.name}</h4>
+                        <span class="text-[10px] bg-brand-900/60 text-brand-300 font-bold px-2 py-0.5 rounded-full border border-brand-700/40">${r.exercises.length}종목</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-1 line-clamp-1">${r.exercises.map(e => e.name).join(', ')}</p>
+                </div>
+            </div>
+            <div class="flex items-center justify-between pt-2 border-t border-slate-700/40">
+                <button onclick="startRoutineFromManage('${r.id}')" class="bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-600/30 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 active:scale-95 transition-all">
+                    <i data-lucide="play" class="w-3.5 h-3.5 fill-emerald-400"></i> 운동 시작
+                </button>
+                <div class="flex items-center gap-1.5">
+                    <button onclick="openRoutineEditModal('${r.id}')" class="px-3 py-1.5 text-slate-300 bg-slate-700/70 hover:bg-slate-700 rounded-xl text-xs font-bold flex items-center gap-1 active:scale-95 transition-all">
+                        <i data-lucide="edit-2" class="w-3.5 h-3.5 text-brand-400"></i> 수정
+                    </button>
+                    <button onclick="deleteRoutineDirectly('${r.id}')" class="p-1.5 text-rose-400 hover:text-rose-300 bg-rose-950/40 border border-rose-800/30 rounded-xl active:scale-95 transition-all" title="삭제">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    lucide.createIcons({ root: listEl });
+}
+
+function createNewRoutineFromManage() {
+    createNewRoutine();
+}
+
+function openRoutinePasteFromManage() {
+    openRoutinePasteModal();
+}
+
+function startRoutineFromManage(id) {
+    closeModal('routine-manage-modal');
+    startWorkout(id);
+}
+
+function deleteRoutineDirectly(id) {
+    const routine = state.routines.find(r => r.id === id);
+    const rName = routine ? routine.name : '루틴';
+    if (!confirm(`'${rName}'을(를) 삭제하시겠습니까?`)) return;
+    
+    state.routines = state.routines.filter(r => r.id !== id);
+    saveData();
+    renderRoutineManageList();
+    if (currentTab === 'workout') switchTab('workout');
+}
+
 function deleteCurrentRoutine() {
     if (!editingRoutineId) return;
     if (!confirm('이 루틴을 삭제하시겠습니까?')) return;
@@ -269,6 +351,7 @@ function deleteCurrentRoutine() {
     closeModal('routine-edit-modal');
     editingRoutineId = null;
     editingRoutine = null;
+    renderRoutineManageList();
     if (currentTab === 'workout') {
         switchTab('workout');
     }
@@ -303,6 +386,7 @@ function saveRoutineEdit() {
     closeModal('routine-edit-modal');
     editingRoutineId = null;
     editingRoutine = null;
+    renderRoutineManageList();
     
     if (currentTab === 'workout') {
         switchTab('workout');
@@ -420,8 +504,10 @@ function processPastedRoutine(startNow) {
     state.routines.unshift(routine);
     saveData();
     closeModal('routine-paste-modal');
+    renderRoutineManageList();
     
     if (startNow) {
+        closeModal('routine-manage-modal');
         startWorkout(routine.id);
     } else {
         alert(`✅ '${routine.name}' (${routine.exercises.length}개 종목)이 루틴 목록에 저장되었습니다!`);
