@@ -202,6 +202,31 @@ function getExerciseHistoryTimeSeries(exerciseName, historyList = (typeof state 
     return list.sort((a, b) => (a.date > b.date ? 1 : -1));
 }
 
+// --- Warm-up Pyramid Set Calculation ---
+function generateWarmupSets(workingWeight) {
+    const w = parseFloat(workingWeight) || 0;
+    if (w <= 0) return [];
+    
+    const roundToPlate = (val) => (Math.round(val / 2.5) * 2.5).toFixed(1).replace(/\.0$/, '');
+    
+    if (w >= 50) {
+        return [
+            { weight: roundToPlate(Math.max(20, w * 0.4)), reps: '10', completed: false, isWarmup: true },
+            { weight: roundToPlate(w * 0.6), reps: '5', completed: false, isWarmup: true },
+            { weight: roundToPlate(w * 0.8), reps: '2', completed: false, isWarmup: true }
+        ];
+    } else if (w >= 20) {
+        return [
+            { weight: roundToPlate(w * 0.5), reps: '8', completed: false, isWarmup: true },
+            { weight: roundToPlate(w * 0.75), reps: '4', completed: false, isWarmup: true }
+        ];
+    } else {
+        return [
+            { weight: roundToPlate(w * 0.6), reps: '8', completed: false, isWarmup: true }
+        ];
+    }
+}
+
 function copyWorkoutSummary() {
     const workout = lastFinishedWorkout || (state.history.length > 0 ? state.history[state.history.length - 1] : null);
     if (!workout) {

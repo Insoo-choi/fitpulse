@@ -128,9 +128,14 @@ function renderActiveWorkout() {
             </div>
             <div>
                 ${setsHtml}
-                <button onclick="addSet(${index})" class="w-full mt-2 py-2 border-2 border-dashed border-slate-700 text-slate-400 font-bold text-sm rounded-xl active:bg-slate-800 transition-colors">
-                    + 세트 추가
-                </button>
+                <div class="grid grid-cols-2 gap-2 mt-2">
+                    <button onclick="addSet(${index})" class="py-2 border-2 border-dashed border-slate-700 hover:border-slate-600 text-slate-400 font-bold text-xs rounded-xl active:bg-slate-800 transition-colors">
+                        + 세트 추가
+                    </button>
+                    <button onclick="addWarmupSets(${index})" class="py-2 border border-amber-600/40 bg-amber-950/20 hover:bg-amber-950/40 text-amber-300 font-bold text-xs rounded-xl active:scale-95 transition-all flex items-center justify-center gap-1">
+                        <i data-lucide="flame" class="w-3.5 h-3.5 text-amber-400"></i> 웜업 세트 추가
+                    </button>
+                </div>
             </div>
         </div>
         `;
@@ -139,6 +144,29 @@ function renderActiveWorkout() {
     container.innerHTML = html;
     lucide.createIcons();
     bindDragEvents();
+}
+
+function addWarmupSets(exIndex) {
+    if (!state.activeWorkout || !state.activeWorkout.exercises[exIndex]) return;
+    const exercise = state.activeWorkout.exercises[exIndex];
+    
+    const firstSet = exercise.sets[0] || { weight: '0', reps: '10' };
+    const workingWeight = parseFloat(firstSet.weight) || 0;
+    
+    if (workingWeight <= 0) {
+        alert('본 세트 무게(1세트)가 설정되어 있지 않아 웜업 세트를 계산할 수 없습니다. 1세트 무게를 먼저 입력해주세요.');
+        return;
+    }
+    
+    const warmupSets = typeof generateWarmupSets === 'function' ? generateWarmupSets(workingWeight) : [];
+    if (warmupSets.length === 0) {
+        alert('웜업 세트를 생성할 수 없습니다.');
+        return;
+    }
+    
+    exercise.sets.unshift(...warmupSets);
+    saveActiveWorkout();
+    updateUI();
 }
 
 function updateUI() {
