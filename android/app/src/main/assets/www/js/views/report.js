@@ -4,25 +4,9 @@ function renderReportView() {
     return `
         <div class="px-4 py-6">
             <h2 class="text-2xl font-black text-white mb-4">성장 리포트</h2>
-            
-            <!-- Profile Settings -->
-            <div class="bg-slate-800/80 rounded-2xl p-4 border border-slate-700/50 mb-6 shadow-xl">
-                <h3 class="text-sm font-bold text-brand-400 mb-4 flex items-center gap-2"><i data-lucide="user" class="w-4 h-4"></i> 체성분 및 증량 설정</h3>
-                <div class="grid grid-cols-2 gap-3 mb-3">
-                    <div>
-                        <label class="text-[10px] text-slate-400 font-bold ml-1">키 (cm)</label>
-                        <input type="number" id="user-height" value="${state.height || 175}" onchange="saveProfileSettings()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-brand-500 transition-colors">
-                    </div>
-                    <div>
-                        <label class="text-[10px] text-slate-400 font-bold ml-1">몸무게 (kg)</label>
-                        <input type="number" id="user-weight" value="${state.bodyWeight || 70}" onchange="saveProfileSettings()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-brand-500 transition-colors">
-                    </div>
-                </div>
-                <div>
-                    <label class="text-[10px] text-slate-400 font-bold ml-1">헬스장 최소 증량 단위 (kg) - AI 코치 기준</label>
-                    <input type="number" id="user-min-inc" step="0.5" value="${state.minIncrement || 2.5}" onchange="saveProfileSettings()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-brand-500 transition-colors">
-                </div>
-            </div>
+
+            <!-- Weekly Muscle Volume Landscape -->
+            ${renderWeeklyVolumeLandscape()}
 
             <!-- Data Backup & Restore -->
             <div class="bg-slate-800/80 rounded-2xl p-4 border border-slate-700/50 mb-6 shadow-xl">
@@ -40,9 +24,6 @@ function renderReportView() {
                     </label>
                 </div>
             </div>
-
-            <!-- Weekly Muscle Volume Landscape -->
-            ${renderWeeklyVolumeLandscape()}
 
             <div class="bg-slate-800/80 rounded-3xl p-5 border border-slate-700/50 shadow-xl mb-6">
                 <select id="chart-type-selector" class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl py-3 px-4 outline-none focus:border-brand-500 font-bold mb-4 appearance-none" onchange="renderCharts()">

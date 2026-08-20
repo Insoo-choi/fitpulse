@@ -647,3 +647,62 @@ function renderPlateCalculator() {
         }
     }
 }
+
+// --- Profile Settings Modal Logic ---
+function updateHeaderProfileInfo() {
+    const el = document.getElementById('header-user-weight');
+    if (el) {
+        const bw = (typeof state !== 'undefined' && state && state.bodyWeight) ? parseFloat(state.bodyWeight).toFixed(1) : '70.0';
+        el.innerText = `${bw} kg`;
+    }
+}
+
+function openProfileSettingsModal() {
+    const hInput = document.getElementById('modal-user-height');
+    const wInput = document.getElementById('modal-user-weight');
+    const incInput = document.getElementById('modal-user-min-inc');
+    
+    if (hInput) hInput.value = (typeof state !== 'undefined' && state.height) ? state.height : 175;
+    if (wInput) wInput.value = (typeof state !== 'undefined' && state.bodyWeight) ? state.bodyWeight : 70;
+    if (incInput) incInput.value = (typeof state !== 'undefined' && state.minIncrement) ? state.minIncrement : 2.5;
+    
+    const modal = document.getElementById('profile-settings-modal');
+    if (modal) modal.classList.remove('hidden');
+    lucide.createIcons();
+}
+
+function saveProfileModalSettings() {
+    const hInput = document.getElementById('modal-user-height');
+    const wInput = document.getElementById('modal-user-weight');
+    const incInput = document.getElementById('modal-user-min-inc');
+    
+    const newHeight = hInput ? parseFloat(hInput.value) : 175;
+    const newWeight = wInput ? parseFloat(wInput.value) : 70;
+    const newMinInc = incInput ? parseFloat(incInput.value) : 2.5;
+    
+    if (newHeight && newHeight > 50 && newHeight < 300) {
+        state.height = newHeight;
+    }
+    if (newWeight && newWeight > 20 && newWeight < 500) {
+        state.bodyWeight = newWeight;
+        const today = typeof getTodayDateString === 'function' ? getTodayDateString() : new Date().toISOString().slice(0, 10);
+        if (!state.weightHistory) state.weightHistory = [];
+        const wIdx = state.weightHistory.findIndex(w => w.date === today);
+        if (wIdx > -1) {
+            state.weightHistory[wIdx].weight = newWeight;
+        } else {
+            state.weightHistory.push({ date: today, weight: newWeight });
+        }
+    }
+    if (newMinInc && newMinInc > 0 && newMinInc <= 20) {
+        state.minIncrement = newMinInc;
+    }
+    
+    if (typeof saveData === 'function') saveData();
+    updateHeaderProfileInfo();
+    closeModal('profile-settings-modal');
+    
+    if (typeof currentTab !== 'undefined' && currentTab === 'report') {
+        renderCharts();
+    }
+}

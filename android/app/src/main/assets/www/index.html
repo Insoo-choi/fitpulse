@@ -45,10 +45,9 @@
                 <p class="text-xs text-brand-300 mt-0.5">스마트 점진적 과부하</p>
             </div>
         </div>
-        <button onclick="connectWatch()" id="hr-btn" class="flex items-center gap-2 bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-full text-xs font-bold text-slate-300 hover:bg-slate-700 active:scale-95 transition-all">
-            <i data-lucide="heart" class="w-4 h-4 text-rose-500"></i>
-            <span id="hr-text">-- BPM</span>
-            <div id="hr-indicator" class="w-2 h-2 rounded-full bg-slate-500"></div>
+        <button onclick="openProfileSettingsModal()" id="profile-settings-btn" class="flex items-center gap-1.5 bg-slate-800/80 hover:bg-slate-750 border border-slate-700/80 px-3 py-1.5 rounded-full text-xs font-bold text-slate-200 active:scale-95 transition-all shadow-sm">
+            <i data-lucide="user" class="w-3.5 h-3.5 text-brand-400"></i>
+            <span id="header-user-weight">70.0 kg</span>
         </button>
     </header>
 
@@ -283,6 +282,49 @@
             <button onclick="closeModal('plate-calculator-modal')" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 rounded-xl text-xs active:scale-95 transition-all">
                 닫기
             </button>
+        </div>
+    </div>
+
+    <!-- Profile & Overload Settings Modal -->
+    <div id="profile-settings-modal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-[75] hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 w-full max-w-sm flex flex-col shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-brand-900/50 border border-brand-700/50 flex items-center justify-center text-brand-400">
+                        <i data-lucide="user" class="w-4.5 h-4.5"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-black text-white">체성분 및 증량 설정</h3>
+                        <p class="text-[10px] text-slate-400 font-bold">프로필 & AI 코치 기준값</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('profile-settings-modal')" class="text-slate-400 p-1 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+
+            <div class="space-y-3.5 mb-6">
+                <div>
+                    <label class="text-[11px] text-slate-400 font-bold ml-1 block mb-1">키 (cm)</label>
+                    <input type="number" id="modal-user-height" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white text-sm outline-none focus:border-brand-500 font-bold" inputmode="decimal">
+                </div>
+                <div>
+                    <label class="text-[11px] text-slate-400 font-bold ml-1 block mb-1">몸무게 (kg)</label>
+                    <input type="number" id="modal-user-weight" step="0.1" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white text-sm outline-none focus:border-brand-500 font-bold" inputmode="decimal">
+                </div>
+                <div>
+                    <label class="text-[11px] text-slate-400 font-bold ml-1 block mb-1">헬스장 최소 증량 단위 (kg)</label>
+                    <p class="text-[10px] text-slate-500 mb-1 ml-1">AI 점진적 과부하 추천의 기본 증량 단위입니다.</p>
+                    <input type="number" id="modal-user-min-inc" step="0.5" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white text-sm outline-none focus:border-brand-500 font-bold" inputmode="decimal">
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <button onclick="closeModal('profile-settings-modal')" class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs active:scale-95 transition-all">
+                    취소
+                </button>
+                <button onclick="saveProfileModalSettings()" class="flex-1 py-3 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-brand-500/20 active:scale-95 transition-all">
+                    설정 저장
+                </button>
+            </div>
         </div>
     </div>
 

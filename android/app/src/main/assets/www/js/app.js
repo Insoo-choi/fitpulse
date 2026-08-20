@@ -3,6 +3,7 @@
 window.onload = () => {
     lucide.createIcons();
     loadData();
+    if (typeof updateHeaderProfileInfo === 'function') updateHeaderProfileInfo();
     if (state.activeWorkout) {
         switchTab('workout_active');
         restoreRestTimerState();
@@ -114,8 +115,4 @@ function switchTab(tab) {
     } else if (tab === 'home') {
         renderCalendar();
     }
-}
-
-function connectWatch() {
-    alert("워치 연결은 데모 모드입니다.");
 }
