@@ -3,6 +3,7 @@ package com.fitpulse.app
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.os.Bundle
+import android.view.KeyEvent
 import android.view.WindowManager
 import android.webkit.*
 import android.widget.Toast
@@ -10,7 +11,6 @@ import android.widget.Toast
 class MainActivity : Activity() {
 
     private lateinit var webView: WebView
-
     private var backPressedTime: Long = 0L
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -78,7 +78,19 @@ class MainActivity : Activity() {
         setContentView(webView)
     }
 
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            handleBackAction()
+            return true
+        }
+        return super.onKeyDown(keyCode, event)
+    }
+
     override fun onBackPressed() {
+        handleBackAction()
+    }
+
+    private fun handleBackAction() {
         if (::webView.isInitialized) {
             webView.evaluateJavascript("(function() { try { return (typeof window.handleAndroidBack === 'function') ? window.handleAndroidBack() : false; } catch(e) { return false; } })()") { result ->
                 val cleaned = result?.trim('"', ' ', '\n', '\r')
@@ -97,7 +109,7 @@ class MainActivity : Activity() {
     private fun handleDoubleBackToExit() {
         val currentTime = System.currentTimeMillis()
         if (currentTime - backPressedTime < 2000) {
-            super.onBackPressed()
+            finish()
         } else {
             backPressedTime = currentTime
             Toast.makeText(this, "'뒤로' 버튼을 한 번 더 누르면 종료됩니다.", Toast.LENGTH_SHORT).show()
