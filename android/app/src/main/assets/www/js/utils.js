@@ -1,5 +1,9 @@
 // --- Utilities, Classification & Clipboard ---
 
+function generateUid(prefix = 'item') {
+    return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+}
+
 function getTodayDateString(dateObj = new Date()) {
     const d = new Date(dateObj);
     const year = d.getFullYear();

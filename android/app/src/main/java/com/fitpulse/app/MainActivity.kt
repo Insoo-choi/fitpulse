@@ -11,6 +11,8 @@ class MainActivity : Activity() {
 
     private lateinit var webView: WebView
 
+    private var backPressedTime: Long = 0L
+
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,6 +34,18 @@ class MainActivity : Activity() {
                 cacheMode = WebSettings.LOAD_DEFAULT
                 mediaPlaybackRequiresUserGesture = false
             }
+
+            addJavascriptInterface(object {
+                @JavascriptInterface
+                fun exitApp() {
+                    runOnUiThread { finish() }
+                }
+
+                @JavascriptInterface
+                fun showToast(msg: String) {
+                    runOnUiThread { Toast.makeText(this@MainActivity, msg, Toast.LENGTH_SHORT).show() }
+                }
+            }, "AndroidBridge")
 
             webChromeClient = object : WebChromeClient() {
                 override fun onJsAlert(view: WebView?, url: String?, message: String?, result: JsResult?): Boolean {
@@ -65,10 +79,28 @@ class MainActivity : Activity() {
     }
 
     override fun onBackPressed() {
-        if (::webView.isInitialized && webView.canGoBack()) {
-            webView.goBack()
+        if (::webView.isInitialized) {
+            webView.evaluateJavascript("(function() { try { return (typeof window.handleAndroidBack === 'function') ? window.handleAndroidBack() : false; } catch(e) { return false; } })()") { result ->
+                val cleaned = result?.trim('"', ' ', '\n', '\r')
+                val isHandled = cleaned.equals("true", ignoreCase = true)
+                if (!isHandled) {
+                    runOnUiThread {
+                        handleDoubleBackToExit()
+                    }
+                }
+            }
         } else {
+            handleDoubleBackToExit()
+        }
+    }
+
+    private fun handleDoubleBackToExit() {
+        val currentTime = System.currentTimeMillis()
+        if (currentTime - backPressedTime < 2000) {
             super.onBackPressed()
+        } else {
+            backPressedTime = currentTime
+            Toast.makeText(this, "'뒤로' 버튼을 한 번 더 누르면 종료됩니다.", Toast.LENGTH_SHORT).show()
         }
     }
 }
