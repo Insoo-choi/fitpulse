@@ -417,9 +417,6 @@ function renderRoutineManageList() {
                         ${tagsHtml}
                         <span class="text-[10px] bg-slate-900 text-slate-400 font-bold px-2 py-0.5 rounded-full border border-slate-700 shrink-0">${r.exercises.length}종목 · ${totalSets}세트</span>
                     </div>
-                    <span class="text-xs text-brand-400 hover:text-brand-300 flex items-center gap-0.5 shrink-0 font-bold bg-brand-950/60 px-2 py-0.5 rounded-lg border border-brand-800/40">
-                        수정 <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
-                    </span>
                 </div>
                 <div class="flex flex-wrap gap-1.5 mt-2">
                     ${(r.exercises || []).slice(0, 6).map(e => `

@@ -1,14 +1,14 @@
 package com.fitpulse.app
 
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.os.Bundle
-import android.view.KeyEvent
 import android.view.WindowManager
 import android.webkit.*
 import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 
-class MainActivity : Activity() {
+class MainActivity : ComponentActivity() {
 
     private lateinit var webView: WebView
     private var backPressedTime: Long = 0L
@@ -75,35 +75,26 @@ class MainActivity : Activity() {
             loadUrl("file:///android_asset/www/index.html")
         }
 
-        setContentView(webView)
-    }
-
-    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        if (keyCode == KeyEvent.KEYCODE_BACK) {
-            handleBackAction()
-            return true
-        }
-        return super.onKeyDown(keyCode, event)
-    }
-
-    override fun onBackPressed() {
-        handleBackAction()
-    }
-
-    private fun handleBackAction() {
-        if (::webView.isInitialized) {
-            webView.evaluateJavascript("(function() { try { return (typeof window.handleAndroidBack === 'function') ? window.handleAndroidBack() : false; } catch(e) { return false; } })()") { result ->
-                val cleaned = result?.trim('"', ' ', '\n', '\r')
-                val isHandled = cleaned.equals("true", ignoreCase = true)
-                if (!isHandled) {
-                    runOnUiThread {
-                        handleDoubleBackToExit()
+        // Intercept Android hardware & gesture back with OnBackPressedCallback
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (::webView.isInitialized) {
+                    webView.evaluateJavascript("(function() { try { return (typeof window.handleAndroidBack === 'function') ? window.handleAndroidBack() : false; } catch(e) { return false; } })()") { result ->
+                        val cleaned = result?.trim('"', ' ', '\n', '\r')
+                        val isHandled = cleaned.equals("true", ignoreCase = true)
+                        if (!isHandled) {
+                            runOnUiThread {
+                                handleDoubleBackToExit()
+                            }
+                        }
                     }
+                } else {
+                    handleDoubleBackToExit()
                 }
             }
-        } else {
-            handleDoubleBackToExit()
-        }
+        })
+
+        setContentView(webView)
     }
 
     private fun handleDoubleBackToExit() {
