@@ -63,6 +63,13 @@ function loadData() {
         });
     });
 
+    // Ensure all history records have robust unique IDs
+    state.history.forEach((h, idx) => {
+        if (!h.id) {
+            h.id = 'hist_' + (h.date ? h.date.replace(/-/g, '') : 'rec') + '_' + idx + '_' + Math.random().toString(36).slice(2, 6);
+        }
+    });
+
     // Load active workout if exists
     const savedActive = localStorage.getItem('fitpulse_active');
     if (savedActive) {

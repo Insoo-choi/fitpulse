@@ -47,4 +47,28 @@ test('deleteWorkoutHistory handles non-existent id gracefully', () => {
 test('deleteWorkoutHistory handles null or empty arguments safely', () => {
     assert.equal(deleteWorkoutHistory(null), false);
     assert.equal(deleteWorkoutHistory(''), false);
+    assert.equal(deleteWorkoutHistory(undefined), false);
 });
+
+test('deleteWorkoutHistory supports direct index and object reference', () => {
+    context.state.history = [
+        { id: 'w1', name: '1차 세션' },
+        { id: 'w2', name: '2차 세션' },
+        { id: 'w3', name: '3차 세션' }
+    ];
+
+    // Delete 2nd session by index 1
+    const res1 = deleteWorkoutHistory(1);
+    assert.equal(res1, true);
+    assert.equal(context.state.history.length, 2);
+    assert.equal(context.state.history[0].id, 'w1');
+    assert.equal(context.state.history[1].id, 'w3');
+
+    // Delete by object reference
+    const targetObj = context.state.history[0];
+    const res2 = deleteWorkoutHistory(targetObj);
+    assert.equal(res2, true);
+    assert.equal(context.state.history.length, 1);
+    assert.equal(context.state.history[0].id, 'w3');
+});
+
