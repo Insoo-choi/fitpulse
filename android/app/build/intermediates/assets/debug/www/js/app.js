@@ -62,9 +62,22 @@ function setupLifecycleListeners() {
             saveRestTimerState();
         }
     });
+
+    window.addEventListener('popstate', (e) => {
+        if (typeof window.handleAndroidBack === 'function') {
+            window.handleAndroidBack();
+        }
+    });
 }
 
-function switchTab(tab) {
+let tabHistory = [];
+
+function switchTab(tab, isBack = false) {
+    if (!isBack && currentTab && currentTab !== tab && currentTab !== 'workout_active' && tab !== 'workout_active') {
+        tabHistory.push(currentTab);
+        if (tabHistory.length > 20) tabHistory.shift();
+    }
+    
     currentTab = tab;
     document.querySelectorAll('[id^="tab-"]').forEach(el => {
         el.classList.remove('tab-active');
@@ -116,3 +129,68 @@ function switchTab(tab) {
         renderCalendar();
     }
 }
+
+// --- Android Back Button Handler ---
+window.handleAndroidBack = function() {
+    try {
+        // 1. Dynamic date info modal check
+        const dateModal = document.getElementById('date-info-modal');
+        if (dateModal) {
+            dateModal.remove();
+            return true;
+        }
+
+        // 2. Modals in LIFO order (highest z-index / top modal first)
+        const modalCheckList = [
+            { id: 'summary-modal', close: () => closeSummary() },
+            { id: 'change-routine-modal', close: () => closeModal('change-routine-modal') },
+            { id: 'routine-diff-modal', close: () => closeModal('routine-diff-modal') },
+            { id: 'workout-action-modal', close: () => closeModal('workout-action-modal') },
+            { id: 'rpe-modal', close: () => closeModal('rpe-modal') },
+            { id: 'daily-weight-modal', close: () => closeModal('daily-weight-modal') },
+            { id: 'profile-settings-modal', close: () => closeModal('profile-settings-modal') },
+            { id: 'plate-calculator-modal', close: () => closeModal('plate-calculator-modal') },
+            { id: 'exercise-history-modal', close: () => closeModal('exercise-history-modal') },
+            { id: 'custom-exercise-modal', close: () => closeModal('custom-exercise-modal') },
+            { id: 'exercise-modal', close: () => closeExerciseModal() },
+            { id: 'set-edit-modal', close: () => closeModal('set-edit-modal') },
+            { id: 'routine-paste-modal', close: () => closeModal('routine-paste-modal') },
+            { id: 'routine-edit-modal', close: () => closeRoutineEditModal() },
+            { id: 'routine-manage-modal', close: () => closeModal('routine-manage-modal') }
+        ];
+
+        for (const m of modalCheckList) {
+            const el = document.getElementById(m.id);
+            if (el && !el.classList.contains('hidden')) {
+                m.close();
+                return true;
+            }
+        }
+
+        // 3. Active workout tab back handling -> prompt workout abort
+        if (currentTab === 'workout_active') {
+            promptAbortWorkout();
+            return true;
+        }
+
+        // 4. Sub tabs back handling -> previous tab or Home
+        if (tabHistory.length > 0) {
+            const prevTab = tabHistory.pop();
+            if (prevTab && prevTab !== currentTab) {
+                switchTab(prevTab, true);
+                return true;
+            }
+        }
+
+        if (currentTab !== 'home') {
+            switchTab('home', true);
+            return true;
+        }
+
+        // 5. At home tab without any modals -> return false to let native handle double-press exit
+        return false;
+    } catch (e) {
+        console.error('Error in handleAndroidBack:', e);
+        return false;
+    }
+};

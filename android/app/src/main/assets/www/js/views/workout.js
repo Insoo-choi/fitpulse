@@ -822,14 +822,26 @@ function finalizeWorkout() {
     saveData();
     
     // Draw Summary UI
-    document.getElementById('sum-count').innerHTML = `${state.workoutCount}<span class="text-sm text-slate-400 font-normal">th</span>`;
-    document.getElementById('sum-kcal').innerHTML = `${kcal}<span class="text-sm text-rose-500 font-bold ml-1">KCAL</span>`;
-    document.getElementById('sum-duration').innerHTML = `${durationMin}<span class="text-sm text-slate-400 font-normal ml-1">분</span>`;
-    document.getElementById('sum-volume').innerHTML = `${Math.round(tVol)}<span class="text-sm text-slate-400 font-normal ml-1">kg</span>`;
-    document.getElementById('sum-ex').innerText = record.exercises.length;
-    document.getElementById('sum-sets').innerHTML = `${tSets}<span class="text-sm text-slate-400 font-normal ml-1">세트</span>`;
-    document.getElementById('sum-reps').innerHTML = `${tReps}<span class="text-sm text-slate-400 font-normal ml-1">회</span>`;
-    document.getElementById('sum-intensity').innerHTML = `${intensity}<span class="text-sm text-slate-400 font-normal ml-1">kg/분</span>`;
+    const sumDateEl = document.getElementById('summary-date');
+    if (sumDateEl) sumDateEl.innerText = `${localISOTime} ${record.name || '운동 완료'}`;
+    
+    const countEl = document.getElementById('sum-count');
+    const kcalEl = document.getElementById('sum-kcal');
+    const durEl = document.getElementById('sum-duration');
+    const volEl = document.getElementById('sum-volume');
+    const exEl = document.getElementById('sum-ex');
+    const setsEl = document.getElementById('sum-sets');
+    const repsEl = document.getElementById('sum-reps');
+    const intEl = document.getElementById('sum-intensity');
+
+    if (countEl) countEl.innerHTML = `${state.workoutCount}<span class="text-sm text-slate-400 font-normal">th</span>`;
+    if (kcalEl) kcalEl.innerHTML = `${kcal}<span class="text-sm text-rose-500 font-bold ml-1">KCAL</span>`;
+    if (durEl) durEl.innerHTML = `${durationMin}<span class="text-sm text-slate-400 font-normal ml-1">분</span>`;
+    if (volEl) volEl.innerHTML = `${Math.round(tVol)}<span class="text-sm text-slate-400 font-normal ml-1">kg</span>`;
+    if (exEl) exEl.innerText = record.exercises.length;
+    if (setsEl) setsEl.innerHTML = `${tSets}<span class="text-sm text-slate-400 font-normal ml-1">세트</span>`;
+    if (repsEl) repsEl.innerHTML = `${tReps}<span class="text-sm text-slate-400 font-normal ml-1">회</span>`;
+    if (intEl) intEl.innerHTML = `${intensity}<span class="text-sm text-slate-400 font-normal ml-1">kg/분</span>`;
     
     // Muscle activation bars
     const radarContainer = document.getElementById('muscle-activation-bars');
@@ -924,8 +936,27 @@ function finalizeWorkout() {
         }
     }
     
-    document.getElementById('summary-modal').classList.remove('hidden');
-    confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+    // Close other overlapping modals
+    ['routine-diff-modal', 'set-edit-modal', 'rpe-modal', 'exercise-modal', 'workout-action-modal'].forEach(id => {
+        const m = document.getElementById(id);
+        if (m) m.classList.add('hidden');
+    });
+
+    const summaryModal = document.getElementById('summary-modal');
+    if (summaryModal) {
+        summaryModal.classList.remove('hidden');
+        summaryModal.scrollTop = 0;
+    }
+    
+    if (typeof confetti === 'function') {
+        try {
+            confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+        } catch(e) {}
+    }
+    
+    if (typeof lucide !== 'undefined' && lucide.createIcons) {
+        lucide.createIcons();
+    }
     
     // Clean up
     state.activeWorkout = null;

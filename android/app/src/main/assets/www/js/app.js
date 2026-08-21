@@ -62,6 +62,12 @@ function setupLifecycleListeners() {
             saveRestTimerState();
         }
     });
+
+    window.addEventListener('popstate', (e) => {
+        if (typeof window.handleAndroidBack === 'function') {
+            window.handleAndroidBack();
+        }
+    });
 }
 
 let tabHistory = [];

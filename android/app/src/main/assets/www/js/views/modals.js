@@ -181,10 +181,14 @@ function createNewRoutine() {
 }
 
 function openRoutineEditModal(id) {
+    if (!id && state.routines && state.routines.length > 0) {
+        id = state.routines[0].id;
+    }
     if (!id) {
-        console.error('No routine id provided to openRoutineEditModal');
+        createNewRoutine();
         return;
     }
+    
     editingRoutineId = id;
     const r = (state.routines || []).find(x => x && (x.id === id || String(x.id) === String(id)));
     if (!r) {
@@ -211,12 +215,14 @@ function openRoutineEditModal(id) {
     const delBtn = document.getElementById('btn-delete-routine');
     if (delBtn) delBtn.classList.remove('hidden');
     
+    // Close manage modal if open to prevent z-index layering conflicts
+    closeModal('routine-manage-modal');
+    
     renderRoutineEditExercises();
     const modal = document.getElementById('routine-edit-modal');
     if (modal) {
         modal.classList.remove('hidden');
         modal.dataset.open = "true";
-        modal.style.zIndex = "100";
     }
     lucide.createIcons();
 }
@@ -226,7 +232,8 @@ function closeRoutineEditModal() {
     editingRoutine = null;
     isEditingForRoutine = false;
     closeModal('routine-edit-modal');
-    renderRoutineManageList();
+    if (typeof renderRoutineManageList === 'function') renderRoutineManageList();
+    if (typeof updateUI === 'function') updateUI();
 }
 
 function renderRoutineEditExercises() {

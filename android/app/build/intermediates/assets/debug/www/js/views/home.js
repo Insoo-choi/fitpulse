@@ -84,7 +84,7 @@ function renderCalendar() {
             const firstGym = gymWorkouts[0];
             const tags = typeof getWorkoutMuscleTags === 'function' ? getWorkoutMuscleTags(firstGym) : [];
             if (tags.length > 0) {
-                tagsPreview = `<div class="text-[8px] leading-tight text-emerald-400 font-black truncate max-w-full px-0.5 mt-0.5">${tags[0]}</div>`;
+                tagsPreview = `<div class="text-[8px] leading-tight text-emerald-400 font-black truncate max-w-full px-0.5 mt-0.5 z-10">${tags[0]}</div>`;
             }
         }
         
@@ -101,8 +101,8 @@ function renderCalendar() {
         
         html += `
             <div class="min-h-[44px] flex flex-col items-center justify-center relative cursor-pointer active:scale-90 transition-transform py-1 rounded-xl hover:bg-slate-700/40" onclick="showDateInfo('${dateStr}')">
-                <span class="text-xs font-bold ${isToday ? 'text-white' : 'text-slate-400'} z-10">${i}</span>
-                ${isToday ? `<div class="absolute inset-0.5 bg-slate-700 rounded-xl -z-0 border border-slate-600"></div>` : ''}
+                <span class="text-xs font-bold ${isToday ? 'text-brand-300 font-black' : 'text-slate-400'} z-10">${i}</span>
+                ${isToday ? `<div class="absolute inset-0.5 bg-slate-700/90 rounded-xl z-0 border border-brand-500/40 shadow-sm"></div>` : ''}
                 ${tagsPreview || dotHtml}
             </div>
         `;
@@ -116,13 +116,14 @@ function showDateInfo(dateStr) {
     let wInfo = '';
     if(workouts.length > 0) {
         wInfo = workouts.map(w => {
+            const histIdx = state.history.findIndex(h => h === w || (w.id && h.id === w.id));
             if(w.isRunning) {
                 return `<div class="bg-blue-900/30 border border-blue-800/50 p-3 rounded-xl mb-2 flex items-start justify-between gap-2">
                     <div class="min-w-0 flex-1">
                         <div class="font-bold text-blue-400 text-sm mb-1">🏃 러닝 (${w.duration}분)</div>
                         <div class="text-xs text-slate-300">거리: ${w.distance || 0}km | 페이스: ${w.pace || '-'}</div>
                     </div>
-                    <button type="button" onclick="removeWorkoutRecord('${w.id}', '${dateStr}')" title="기록 삭제" class="p-1.5 rounded-lg bg-slate-800/80 hover:bg-rose-950 text-slate-400 hover:text-rose-400 border border-slate-700/60 active:scale-90 transition-all shrink-0">
+                    <button type="button" onclick="removeWorkoutRecord('${w.id || ''}', '${dateStr}', ${histIdx})" title="기록 삭제" class="p-1.5 rounded-lg bg-slate-800/80 hover:bg-rose-950 text-slate-400 hover:text-rose-400 border border-slate-700/60 active:scale-90 transition-all shrink-0">
                         <i data-lucide="trash-2" class="w-4 h-4"></i>
                     </button>
                 </div>`;
@@ -136,7 +137,7 @@ function showDateInfo(dateStr) {
                         <div class="font-bold text-emerald-400 text-sm truncate mr-2">💪 ${w.name || '운동'} (${w.duration}분)</div>
                         <div class="flex items-center gap-1.5 shrink-0">
                             ${tagsHtml}
-                            <button type="button" onclick="removeWorkoutRecord('${w.id}', '${dateStr}')" title="기록 삭제" class="p-1 rounded-lg bg-slate-800/80 hover:bg-rose-950 text-slate-400 hover:text-rose-400 border border-slate-700/60 active:scale-90 transition-all ml-1">
+                            <button type="button" onclick="removeWorkoutRecord('${w.id || ''}', '${dateStr}', ${histIdx})" title="기록 삭제" class="p-1 rounded-lg bg-slate-800/80 hover:bg-rose-950 text-slate-400 hover:text-rose-400 border border-slate-700/60 active:scale-90 transition-all ml-1">
                                 <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                             </button>
                         </div>
@@ -274,12 +275,16 @@ function handleRemoveProtein(dateStr, entryId) {
     showDateInfo(dateStr);
 }
 
-function removeWorkoutRecord(workoutId, dateStr) {
-    if (!workoutId) return;
+function removeWorkoutRecord(workoutId, dateStr, directIndex) {
+    if (!workoutId && (directIndex === undefined || directIndex < 0)) return;
     if (!confirm('정말로 이 운동 기록을 삭제하시겠습니까? (삭제 후 복구할 수 없습니다)')) return;
     
-    if (typeof deleteWorkoutHistory === 'function') {
-        deleteWorkoutHistory(workoutId);
+    let deleted = false;
+    if (workoutId && typeof deleteWorkoutHistory === 'function') {
+        deleted = deleteWorkoutHistory(workoutId);
+    }
+    if (!deleted && directIndex !== undefined && directIndex >= 0 && typeof deleteWorkoutHistory === 'function') {
+        deleted = deleteWorkoutHistory(directIndex);
     }
     
     const oldModal = document.getElementById('date-info-modal');

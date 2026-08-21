@@ -1,5 +1,9 @@
 // --- Utilities, Classification & Clipboard ---
 
+function generateUid(prefix = 'item') {
+    return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+}
+
 function getTodayDateString(dateObj = new Date()) {
     const d = new Date(dateObj);
     const year = d.getFullYear();
@@ -284,10 +288,20 @@ function getWorkoutMuscleTags(workout) {
 }
 
 // --- Delete Workout History Record ---
-function deleteWorkoutHistory(workoutId) {
-    if (!state || !state.history || !workoutId) return false;
-    const idx = state.history.findIndex(h => h.id === workoutId);
-    if (idx === -1) return false;
+function deleteWorkoutHistory(target) {
+    if (!state || !state.history || target === undefined || target === null) return false;
+    
+    let idx = -1;
+    if (typeof target === 'string' && target.trim()) {
+        const tStr = target.trim();
+        idx = state.history.findIndex(h => h && (h.id === tStr || String(h.id) === tStr));
+    } else if (typeof target === 'number') {
+        idx = target;
+    } else if (typeof target === 'object' && target !== null) {
+        idx = state.history.findIndex(h => h === target || (target.id && h.id === target.id));
+    }
+    
+    if (idx < 0 || idx >= state.history.length) return false;
     state.history.splice(idx, 1);
     if (typeof saveData === 'function') saveData();
     return true;

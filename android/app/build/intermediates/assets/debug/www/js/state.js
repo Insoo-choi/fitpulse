@@ -48,7 +48,25 @@ function loadData() {
     // Merge Jeff Routines if missing
     jeffRoutines.forEach(jr => {
         if (!state.routines.find(r => r.id === jr.id)) {
-            state.routines.unshift(jr);
+            state.routines.unshift(JSON.parse(JSON.stringify(jr)));
+        }
+    });
+
+    // Ensure all exercises and sets have unique IDs
+    state.routines.forEach(r => {
+        if (!r.id) r.id = 'routine_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+        (r.exercises || []).forEach(ex => {
+            if (!ex.id) ex.id = 'ex_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+            (ex.sets || []).forEach(s => {
+                if (!s.id) s.id = 'set_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+            });
+        });
+    });
+
+    // Ensure all history records have robust unique IDs
+    state.history.forEach((h, idx) => {
+        if (!h.id) {
+            h.id = 'hist_' + (h.date ? h.date.replace(/-/g, '') : 'rec') + '_' + idx + '_' + Math.random().toString(36).slice(2, 6);
         }
     });
 
@@ -57,6 +75,14 @@ function loadData() {
     if (savedActive) {
         try {
             state.activeWorkout = JSON.parse(savedActive);
+            if (state.activeWorkout && state.activeWorkout.exercises) {
+                state.activeWorkout.exercises.forEach(ex => {
+                    if (!ex.id) ex.id = 'ex_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+                    (ex.sets || []).forEach(s => {
+                        if (!s.id) s.id = 'set_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+                    });
+                });
+            }
         } catch (e) {
             state.activeWorkout = null;
         }
