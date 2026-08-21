@@ -181,8 +181,12 @@ function createNewRoutine() {
 }
 
 function openRoutineEditModal(id) {
+    if (!id) {
+        console.error('No routine id provided to openRoutineEditModal');
+        return;
+    }
     editingRoutineId = id;
-    const r = (state.routines || []).find(x => x.id === id || String(x.id) === String(id));
+    const r = (state.routines || []).find(x => x && (x.id === id || String(x.id) === String(id)));
     if (!r) {
         console.warn('Routine not found for id:', id);
         alert('해당 루틴을 찾을 수 없습니다.');
@@ -212,6 +216,7 @@ function openRoutineEditModal(id) {
     if (modal) {
         modal.classList.remove('hidden');
         modal.dataset.open = "true";
+        modal.style.zIndex = "100";
     }
     lucide.createIcons();
 }
@@ -221,6 +226,7 @@ function closeRoutineEditModal() {
     editingRoutine = null;
     isEditingForRoutine = false;
     closeModal('routine-edit-modal');
+    renderRoutineManageList();
 }
 
 function renderRoutineEditExercises() {
@@ -397,14 +403,14 @@ function renderRoutineManageList() {
         return `
         <div class="bg-slate-800/80 hover:bg-slate-800 rounded-2xl p-4 border border-slate-700/60 flex flex-col gap-3 shadow-md transition-all">
             <!-- Header & Details (Clicking opens Edit/Detail modal) -->
-            <div class="cursor-pointer active:opacity-80 transition-opacity" onclick="openRoutineEditModal('${r.id}')">
+            <div class="cursor-pointer active:opacity-80 transition-opacity" data-routine-id="${r.id}" onclick="openRoutineEditModal(this.dataset.routineId)">
                 <div class="flex items-center justify-between mb-1">
                     <div class="flex items-center gap-2 min-w-0 pr-2">
                         <h4 class="font-black text-white text-base truncate">${r.name}</h4>
                         ${tagsHtml}
                         <span class="text-[10px] bg-slate-900 text-slate-400 font-bold px-2 py-0.5 rounded-full border border-slate-700 shrink-0">${r.exercises.length}종목 · ${totalSets}세트</span>
                     </div>
-                    <span class="text-xs text-brand-400 hover:text-brand-300 flex items-center gap-0.5 shrink-0 font-bold">
+                    <span class="text-xs text-brand-400 hover:text-brand-300 flex items-center gap-0.5 shrink-0 font-bold bg-brand-950/60 px-2 py-0.5 rounded-lg border border-brand-800/40">
                         수정 <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
                     </span>
                 </div>
@@ -418,18 +424,18 @@ function renderRoutineManageList() {
 
             <!-- Action Buttons Bar -->
             <div class="flex items-center justify-between pt-2.5 border-t border-slate-700/50 mt-1">
-                <button onclick="startRoutineFromManage('${r.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-md shadow-emerald-600/20 active:scale-95 transition-all">
+                <button type="button" data-routine-id="${r.id}" onclick="startRoutineFromManage(this.dataset.routineId)" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-md shadow-emerald-600/20 active:scale-95 transition-all">
                     <i data-lucide="play" class="w-3.5 h-3.5 fill-white"></i> 운동 시작
                 </button>
                 <div class="flex items-center gap-1.5">
-                    <button onclick="moveRoutine('${r.id}', -1)" class="p-1.5 text-slate-400 hover:text-white bg-slate-700/70 hover:bg-slate-700 rounded-lg active:scale-95 transition-all" ${rIdx === 0 ? 'disabled style="opacity:0.3"' : ''} title="순서 위로"><i data-lucide="chevron-up" class="w-4 h-4"></i></button>
-                    <button onclick="moveRoutine('${r.id}', 1)" class="p-1.5 text-slate-400 hover:text-white bg-slate-700/70 hover:bg-slate-700 rounded-lg active:scale-95 transition-all" ${rIdx === state.routines.length - 1 ? 'disabled style="opacity:0.3"' : ''} title="순서 아래로"><i data-lucide="chevron-down" class="w-4 h-4"></i></button>
-                    <button onclick="duplicateRoutine('${r.id}')" class="p-1.5 text-brand-300 hover:text-white bg-brand-950/40 border border-brand-800/30 rounded-lg active:scale-95 transition-all" title="루틴 복제"><i data-lucide="copy" class="w-4 h-4"></i></button>
-                    <button onclick="openRoutineEditModal('${r.id}')" class="px-2.5 py-1.5 text-slate-200 hover:text-white bg-slate-700/90 hover:bg-slate-700 border border-slate-600/50 rounded-lg text-xs font-bold flex items-center gap-1 active:scale-95 transition-all" title="루틴 수정">
+                    <button type="button" data-routine-id="${r.id}" onclick="moveRoutine(this.dataset.routineId, -1)" class="p-1.5 text-slate-400 hover:text-white bg-slate-700/70 hover:bg-slate-700 rounded-lg active:scale-95 transition-all" ${rIdx === 0 ? 'disabled style="opacity:0.3"' : ''} title="순서 위로"><i data-lucide="chevron-up" class="w-4 h-4"></i></button>
+                    <button type="button" data-routine-id="${r.id}" onclick="moveRoutine(this.dataset.routineId, 1)" class="p-1.5 text-slate-400 hover:text-white bg-slate-700/70 hover:bg-slate-700 rounded-lg active:scale-95 transition-all" ${rIdx === state.routines.length - 1 ? 'disabled style="opacity:0.3"' : ''} title="순서 아래로"><i data-lucide="chevron-down" class="w-4 h-4"></i></button>
+                    <button type="button" data-routine-id="${r.id}" onclick="duplicateRoutine(this.dataset.routineId)" class="p-1.5 text-brand-300 hover:text-white bg-brand-950/40 border border-brand-800/30 rounded-lg active:scale-95 transition-all" title="루틴 복제"><i data-lucide="copy" class="w-4 h-4"></i></button>
+                    <button type="button" data-routine-id="${r.id}" onclick="openRoutineEditModal(this.dataset.routineId)" class="px-3 py-1.5 text-brand-300 hover:text-white bg-brand-950/70 hover:bg-brand-900/80 border border-brand-700/60 rounded-lg text-xs font-bold flex items-center gap-1 active:scale-95 transition-all shadow-sm" title="루틴 수정">
                         <i data-lucide="edit-2" class="w-3.5 h-3.5 text-brand-400"></i>
                         <span>수정</span>
                     </button>
-                    <button onclick="deleteRoutineDirectly('${r.id}')" class="p-1.5 text-rose-400 hover:text-rose-300 bg-rose-950/40 border border-rose-800/30 rounded-lg active:scale-95 transition-all ml-0.5" title="루틴 삭제">
+                    <button type="button" data-routine-id="${r.id}" onclick="deleteRoutineDirectly(this.dataset.routineId)" class="p-1.5 text-rose-400 hover:text-rose-300 bg-rose-950/40 border border-rose-800/30 rounded-lg active:scale-95 transition-all ml-0.5" title="루틴 삭제">
                         <i data-lucide="trash-2" class="w-4 h-4"></i>
                     </button>
                 </div>

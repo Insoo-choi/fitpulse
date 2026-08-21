@@ -1,28 +1,63 @@
 // --- Workout Start & Active Workout Views ---
 
 function renderWorkoutStartView() {
-    let routinesHtml = state.routines.map((r) => `
-        <div class="bg-slate-800/80 rounded-2xl p-4 border border-slate-700/50 mb-3 flex items-center justify-between active:bg-slate-800 transition-colors">
-            <div class="flex-1 min-w-0 pr-4 cursor-pointer" onclick="startWorkout('${r.id}')">
-                <h4 class="font-bold text-white text-base truncate">${r.name}</h4>
-                <p class="text-xs text-slate-400 mt-1 truncate">${r.exercises.map(e=>e.name).join(', ')}</p>
+    let routinesHtml = '';
+    if (state.routines.length === 0) {
+        routinesHtml = `
+            <div class="text-center py-10 bg-slate-800/40 rounded-3xl border border-slate-700/50 p-6 text-slate-500">
+                <p class="font-bold text-sm text-slate-400 mb-1">등록된 루틴이 없습니다.</p>
+                <p class="text-xs text-slate-500 mb-4">새 루틴을 생성하거나 텍스트를 붙여넣어 시작하세요.</p>
+                <button onclick="openRoutineManageModal()" class="text-xs bg-brand-600 hover:bg-brand-500 text-white font-bold px-4 py-2 rounded-xl active:scale-95 transition-all">루틴 관리 열기</button>
             </div>
-            <div class="flex gap-2">
-                <button onclick="openRoutineEditModal('${r.id}')" class="p-2 text-slate-400 bg-slate-700/50 rounded-xl active:scale-95"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+        `;
+    } else {
+        routinesHtml = state.routines.map((r) => {
+            const totalSets = (r.exercises || []).reduce((sum, e) => sum + (e.sets ? e.sets.length : 0), 0);
+            return `
+            <div class="bg-slate-800/80 hover:bg-slate-800 rounded-2xl p-4 border border-slate-700/50 mb-3 flex items-center justify-between active:scale-[0.99] transition-all shadow-sm">
+                <div class="flex-1 min-w-0 pr-3 cursor-pointer" onclick="openRoutineEditModal('${r.id}')" title="루틴 수정 및 상세">
+                    <div class="flex items-center gap-2 mb-1">
+                        <h4 class="font-black text-white text-base truncate">${r.name}</h4>
+                        <span class="text-[10px] bg-brand-900/60 text-brand-300 font-bold px-2 py-0.5 rounded-full border border-brand-700/40 shrink-0">${r.exercises.length}종목 · ${totalSets}세트</span>
+                    </div>
+                    <p class="text-xs text-slate-400 truncate">${r.exercises.map(e=>e.name).join(', ')}</p>
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0">
+                    <button onclick="openRoutineEditModal('${r.id}')" class="px-2.5 py-2 text-xs font-bold text-slate-300 hover:text-white bg-slate-700/70 hover:bg-slate-700 rounded-xl active:scale-95 transition-all flex items-center gap-1 border border-slate-600/40" title="루틴 수정">
+                        <i data-lucide="edit-2" class="w-3.5 h-3.5 text-brand-400"></i>
+                        <span>수정</span>
+                    </button>
+                    <button onclick="startWorkout('${r.id}')" class="px-3.5 py-2 text-xs font-black text-emerald-300 hover:text-white bg-emerald-950/70 hover:bg-emerald-900/80 border border-emerald-700/50 rounded-xl active:scale-95 transition-all flex items-center gap-1 shadow-md shadow-emerald-900/20" title="운동 시작">
+                        <i data-lucide="play" class="w-3.5 h-3.5 fill-emerald-400"></i>
+                        <span>시작</span>
+                    </button>
+                </div>
             </div>
-        </div>
-    `).join('');
+            `;
+        }).join('');
+    }
 
     return `
         <div class="px-4 py-6">
-            <h2 class="text-2xl font-black text-white mb-6">운동 시작</h2>
-            <button onclick="startWorkout()" class="w-full bg-brand-600 text-white font-black py-4 rounded-2xl text-lg shadow-lg shadow-brand-500/20 active:scale-95 transition-transform flex items-center justify-center gap-2 mb-8">
-                <i data-lucide="plus" class="w-6 h-6"></i> 자율 운동 (빈 화면)
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="text-2xl font-black text-white">운동 시작</h2>
+                    <p class="text-xs text-slate-400 mt-0.5">루틴을 선택하거나 바로 자율 운동을 시작하세요.</p>
+                </div>
+                <button onclick="openRoutineManageModal()" class="text-xs font-bold text-slate-300 bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-2 rounded-xl flex items-center gap-1 active:scale-95 transition-all">
+                    <i data-lucide="folder-kanban" class="w-3.5 h-3.5 text-brand-400"></i> 루틴 관리
+                </button>
+            </div>
+
+            <button onclick="startWorkout()" class="w-full bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 text-white font-black py-4 rounded-2xl text-lg shadow-lg shadow-brand-500/20 active:scale-95 transition-all flex items-center justify-center gap-2 mb-8">
+                <i data-lucide="plus" class="w-6 h-6"></i> 자율 운동 시작 (빈 화면)
             </button>
             
             <div class="flex items-center justify-between mb-4">
-                <h3 class="font-bold text-slate-300">내 루틴 목록</h3>
-                <button onclick="createNewRoutine()" class="text-xs font-bold text-brand-400 bg-brand-900/30 px-3 py-1.5 rounded-full">+ 새 루틴</button>
+                <h3 class="font-black text-white text-base">내 루틴 목록 (${state.routines.length})</h3>
+                <div class="flex items-center gap-1.5">
+                    <button onclick="createNewRoutine()" class="text-xs font-bold text-brand-400 bg-brand-900/30 border border-brand-700/40 px-3 py-1.5 rounded-full active:scale-95 transition-all">+ 새 루틴</button>
+                </div>
             </div>
             <div>${routinesHtml}</div>
         </div>
@@ -71,6 +106,7 @@ function renderActiveWorkout() {
     let html = '';
     
     state.activeWorkout.exercises.forEach((exercise, index) => {
+        if (!exercise.id) exercise.id = generateUid('ex');
         const isAllCompleted = exercise.sets.length > 0 && exercise.sets.every(s => s.completed);
         const category = exercise.overloadType || getExerciseCategory(exercise.name);
         const catLabel = getOverloadTypeLabel(category);
@@ -78,6 +114,7 @@ function renderActiveWorkout() {
         const wLabel = wType === 'single' ? '한손' : wType === 'machine' ? '머신' : '전체';
         
         let setsHtml = exercise.sets.map((set, sIndex) => {
+            if (!set.id) set.id = generateUid('set');
             const setType = set.type || (set.isWarmup ? 'warmup' : 'normal');
             let badgeText = `${sIndex + 1}`;
             let badgeClass = 'text-slate-500 bg-slate-800/60 border border-slate-700/50';
@@ -94,11 +131,11 @@ function renderActiveWorkout() {
             }
 
             return `
-            <div class="flex items-center gap-2 mb-2 group">
-                <button type="button" onclick="toggleSetType(${index}, ${sIndex})" title="세트 유형 변경 (일반/웜업/드롭/실패)" class="w-7 h-7 rounded-lg text-center text-xs font-black shrink-0 active:scale-90 transition-transform ${badgeClass}">
+            <div class="flex items-center gap-2 mb-2 group" data-set-id="${set.id}">
+                <button type="button" onclick="toggleSetTypeById('${exercise.id}', '${set.id}')" title="세트 유형 변경 (일반/웜업/드롭/실패)" class="w-7 h-7 rounded-lg text-center text-xs font-black shrink-0 active:scale-90 transition-transform ${badgeClass}">
                     ${badgeText}
                 </button>
-                <div class="flex-1 flex gap-2 cursor-pointer" onclick="openSetEditModal(${index}, ${sIndex})">
+                <div class="flex-1 flex gap-2 cursor-pointer" onclick="openSetEditModalById('${exercise.id}', '${set.id}')">
                     <div class="flex-1 bg-slate-900/50 rounded-xl py-2 px-3 text-center border border-slate-700/50 relative">
                         <span class="font-black text-lg ${set.completed ? 'text-slate-400' : 'text-white'}">${set.weight}</span>
                         <span class="text-[10px] text-slate-500 font-bold ml-0.5">kg</span>
@@ -108,15 +145,18 @@ function renderActiveWorkout() {
                         <span class="text-[10px] text-slate-500 font-bold ml-0.5">회</span>
                     </div>
                 </div>
-                <button onclick="toggleSetComplete(${index}, ${sIndex})" class="w-12 h-[42px] rounded-xl flex items-center justify-center transition-all ${set.completed ? 'bg-emerald-600/20 text-emerald-500 border border-emerald-500/30' : 'bg-slate-700 text-slate-400'} active:scale-90">
+                <button onclick="toggleSetCompleteById('${exercise.id}', '${set.id}')" class="w-12 h-[42px] rounded-xl flex items-center justify-center transition-all ${set.completed ? 'bg-emerald-600/20 text-emerald-500 border border-emerald-500/30' : 'bg-slate-700 text-slate-400'} active:scale-90">
                     <i data-lucide="check" class="w-6 h-6 ${set.completed ? 'opacity-100' : 'opacity-30'}"></i>
+                </button>
+                <button onclick="removeSetById('${exercise.id}', '${set.id}')" class="text-slate-600 hover:text-rose-400 p-1 active:scale-90 transition-all" title="세트 삭제">
+                    <i data-lucide="minus-circle" class="w-4 h-4"></i>
                 </button>
             </div>
             `;
         }).join('');
 
         html += `
-        <div class="bg-slate-800/80 rounded-2xl p-4 border border-slate-700/50 mb-4 transition-all ex-card ${isAllCompleted ? 'opacity-70' : 'shadow-lg shadow-black/20'}" data-index="${index}">
+        <div class="bg-slate-800/80 rounded-2xl p-4 border border-slate-700/50 mb-4 transition-all ex-card ${isAllCompleted ? 'opacity-70' : 'shadow-lg shadow-black/20'}" data-index="${index}" data-ex-id="${exercise.id}">
             <div class="flex items-center justify-between mb-4 border-b border-slate-700/50 pb-3">
                 <div class="flex items-center gap-2 flex-1 min-w-0 pr-2">
                     <div class="drag-handle-workout p-2 -ml-2 text-slate-500 cursor-grab active:cursor-grabbing">
@@ -127,10 +167,10 @@ function renderActiveWorkout() {
                             ${exercise.name} <i data-lucide="refresh-cw" class="w-3 h-3 inline-block text-slate-500 ml-1"></i>
                         </h3>
                         <div class="flex items-center gap-1 shrink-0 mt-1">
-                            <button onclick="toggleWeightType(${index})" class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-700 text-slate-300 whitespace-nowrap active:scale-95">
+                            <button onclick="toggleWeightTypeById('${exercise.id}')" class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-700 text-slate-300 whitespace-nowrap active:scale-95">
                                 ${wLabel}
                             </button>
-                            <button onclick="toggleOverloadType(${index})" class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-brand-900/50 text-brand-300 border border-brand-700/50 whitespace-nowrap active:scale-95">
+                            <button onclick="toggleOverloadTypeById('${exercise.id}')" class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-brand-900/50 text-brand-300 border border-brand-700/50 whitespace-nowrap active:scale-95">
                                 ${catLabel}
                             </button>
                             <button onclick="openExerciseHistoryModal('${exercise.name.replace(/'/g, "\\'")}')" class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-700/80 hover:bg-slate-700 text-slate-300 border border-slate-600/50 whitespace-nowrap active:scale-95 flex items-center gap-1">
@@ -141,17 +181,17 @@ function renderActiveWorkout() {
                     </div>
                 </div>
                 <div class="flex flex-col gap-1 shrink-0">
-                    <button onclick="completeAllSets(${index})" class="text-[10px] font-bold bg-slate-700 text-emerald-400 px-2 py-1 rounded-md active:bg-slate-600">전체 완료</button>
-                    <button onclick="removeExercise(${index})" class="text-[10px] font-bold text-slate-500 px-2 py-1 text-right active:text-rose-400">삭제</button>
+                    <button onclick="completeAllSetsById('${exercise.id}')" class="text-[10px] font-bold bg-slate-700 hover:bg-slate-600 text-emerald-400 px-2.5 py-1 rounded-md active:scale-95 transition-all">전체 완료</button>
+                    <button onclick="removeExerciseById('${exercise.id}')" class="text-[10px] font-bold text-rose-400 hover:text-rose-300 px-2 py-1 text-right active:scale-95 transition-all">삭제</button>
                 </div>
             </div>
             <div>
                 ${setsHtml}
                 <div class="grid grid-cols-2 gap-2 mt-2">
-                    <button onclick="addSet(${index})" class="py-2 border-2 border-dashed border-slate-700 hover:border-slate-600 text-slate-400 font-bold text-xs rounded-xl active:bg-slate-800 transition-colors">
+                    <button onclick="addSetById('${exercise.id}')" class="py-2 border-2 border-dashed border-slate-700 hover:border-slate-600 text-slate-400 font-bold text-xs rounded-xl active:bg-slate-800 transition-colors">
                         + 세트 추가
                     </button>
-                    <button onclick="addWarmupSets(${index})" class="py-2 border border-amber-600/40 bg-amber-950/20 hover:bg-amber-950/40 text-amber-300 font-bold text-xs rounded-xl active:scale-95 transition-all flex items-center justify-center gap-1">
+                    <button onclick="addWarmupSetsById('${exercise.id}')" class="py-2 border border-amber-600/40 bg-amber-950/20 hover:bg-amber-950/40 text-amber-300 font-bold text-xs rounded-xl active:scale-95 transition-all flex items-center justify-center gap-1">
                         <i data-lucide="flame" class="w-3.5 h-3.5 text-amber-400"></i> 웜업 세트 추가
                     </button>
                 </div>
@@ -165,9 +205,10 @@ function renderActiveWorkout() {
     bindDragEvents();
 }
 
-function addWarmupSets(exIndex) {
-    if (!state.activeWorkout || !state.activeWorkout.exercises[exIndex]) return;
-    const exercise = state.activeWorkout.exercises[exIndex];
+function addWarmupSetsById(exId) {
+    if (!state.activeWorkout || !state.activeWorkout.exercises) return;
+    const exercise = state.activeWorkout.exercises.find(e => e.id === exId);
+    if (!exercise) return;
     
     const firstSet = exercise.sets[0] || { weight: '0', reps: '10' };
     const workingWeight = parseFloat(firstSet.weight) || 0;
@@ -183,14 +224,17 @@ function addWarmupSets(exIndex) {
         return;
     }
     
+    warmupSets.forEach(ws => { ws.id = generateUid('set'); });
     exercise.sets.unshift(...warmupSets);
     saveActiveWorkout();
     updateUI();
 }
 
-function toggleSetType(exIndex, setIndex) {
-    if (!state.activeWorkout || !state.activeWorkout.exercises[exIndex]) return;
-    const set = state.activeWorkout.exercises[exIndex].sets[setIndex];
+function toggleSetTypeById(exId, setId) {
+    if (!state.activeWorkout || !state.activeWorkout.exercises) return;
+    const exercise = state.activeWorkout.exercises.find(e => e.id === exId);
+    if (!exercise || !exercise.sets) return;
+    const set = exercise.sets.find(s => s.id === setId);
     if (!set) return;
     
     const types = ['normal', 'warmup', 'drop', 'failure'];
@@ -209,8 +253,11 @@ function updateUI() {
     }
 }
 
-function toggleWeightType(index) {
-    const ex = state.activeWorkout.exercises[index];
+function toggleWeightTypeById(exId) {
+    if (!state.activeWorkout || !state.activeWorkout.exercises) return;
+    const ex = state.activeWorkout.exercises.find(e => e.id === exId);
+    if (!ex) return;
+    
     if (!ex.weightType || ex.weightType === 'total') ex.weightType = 'single';
     else if (ex.weightType === 'single') ex.weightType = 'machine';
     else ex.weightType = 'total';
@@ -222,8 +269,11 @@ function toggleWeightType(index) {
     updateUI();
 }
 
-function toggleOverloadType(index) {
-    const ex = state.activeWorkout.exercises[index];
+function toggleOverloadTypeById(exId) {
+    if (!state.activeWorkout || !state.activeWorkout.exercises) return;
+    const ex = state.activeWorkout.exercises.find(e => e.id === exId);
+    if (!ex) return;
+    
     const current = ex.overloadType || getExerciseCategory(ex.name);
     let nextType = 'large_compound';
     if (current === 'large_compound') nextType = 'upper_compound';
@@ -239,9 +289,14 @@ function toggleOverloadType(index) {
     updateUI();
 }
 
-function toggleSetComplete(exIndex, setIndex) {
-    const exercise = state.activeWorkout.exercises[exIndex];
-    const set = exercise.sets[setIndex];
+function toggleSetCompleteById(exId, setId) {
+    if (!state.activeWorkout || !state.activeWorkout.exercises) return;
+    const exIdx = state.activeWorkout.exercises.findIndex(e => e.id === exId);
+    if (exIdx === -1) return;
+    const exercise = state.activeWorkout.exercises[exIdx];
+    const set = exercise.sets.find(s => s.id === setId);
+    if (!set) return;
+    
     set.completed = !set.completed;
     
     if (set.completed) {
@@ -254,12 +309,15 @@ function toggleSetComplete(exIndex, setIndex) {
     updateUI();
 
     if (isAllCompleted && !exercise.rpeRated && state.activeWorkout.routineId) {
-        setTimeout(() => openRpeModal(exIndex), 400);
+        setTimeout(() => openRpeModal(exIdx), 400);
     }
 }
 
-function completeAllSets(exIndex) {
-    const exercise = state.activeWorkout.exercises[exIndex];
+function completeAllSetsById(exId) {
+    if (!state.activeWorkout || !state.activeWorkout.exercises) return;
+    const exIdx = state.activeWorkout.exercises.findIndex(e => e.id === exId);
+    if (exIdx === -1) return;
+    const exercise = state.activeWorkout.exercises[exIdx];
     exercise.sets.forEach(s => s.completed = true);
     saveActiveWorkout();
     updateUI();
@@ -268,8 +326,41 @@ function completeAllSets(exIndex) {
     if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
 
     if (!exercise.rpeRated && state.activeWorkout.routineId) {
-        setTimeout(() => openRpeModal(exIndex), 400);
+        setTimeout(() => openRpeModal(exIdx), 400);
     }
+}
+
+function removeExerciseById(exId) {
+    if (!state.activeWorkout || !state.activeWorkout.exercises) return;
+    const ex = state.activeWorkout.exercises.find(e => e.id === exId);
+    const exName = ex ? ex.name : '운동';
+    if (!confirm(`'${exName}' 종목을 현재 운동에서 삭제하시겠습니까?`)) return;
+    state.activeWorkout.exercises = state.activeWorkout.exercises.filter(e => e.id !== exId);
+    saveActiveWorkout();
+    updateUI();
+}
+
+function removeSetById(exId, setId) {
+    if (!state.activeWorkout || !state.activeWorkout.exercises) return;
+    const ex = state.activeWorkout.exercises.find(e => e.id === exId);
+    if (!ex || !ex.sets) return;
+    if (ex.sets.length <= 1) {
+        alert('최소 1개의 세트가 필요합니다. 운동을 삭제하려면 우측 상단의 삭제를 누르세요.');
+        return;
+    }
+    ex.sets = ex.sets.filter(s => s.id !== setId);
+    saveActiveWorkout();
+    updateUI();
+}
+
+function addSetById(exId) { 
+    if (!state.activeWorkout || !state.activeWorkout.exercises) return;
+    const ex = state.activeWorkout.exercises.find(e => e.id === exId);
+    if (!ex) return;
+    const last = ex.sets[ex.sets.length - 1] || {weight:'0', reps:'0'};
+    ex.sets.push({ id: generateUid('set'), weight: last.weight, reps: last.reps, completed: false });
+    saveActiveWorkout();
+    updateUI();
 }
 
 function openRpeModal(exIndex) {
@@ -402,10 +493,16 @@ function openExerciseHistoryModal(exerciseName) {
     if (modal) modal.classList.remove('hidden');
 }
 
-function openSetEditModal(exIndex, setIndex) {
-    currentEditingSet = {exIndex, setIndex};
-    const exercise = state.activeWorkout.exercises[exIndex];
-    const set = exercise.sets[setIndex];
+function openSetEditModalById(exId, setId) {
+    if (!state.activeWorkout || !state.activeWorkout.exercises) return;
+    const exIdx = state.activeWorkout.exercises.findIndex(e => e.id === exId);
+    if (exIdx === -1) return;
+    const exercise = state.activeWorkout.exercises[exIdx];
+    const sIdx = exercise.sets.findIndex(s => s.id === setId);
+    if (sIdx === -1) return;
+    const set = exercise.sets[sIdx];
+
+    currentEditingSet = { exId, setId, exIndex: exIdx, setIndex: sIdx };
     
     const titleEl = document.getElementById('edit-set-title');
     const subTitleEl = document.getElementById('edit-set-subtitle');
@@ -413,13 +510,13 @@ function openSetEditModal(exIndex, setIndex) {
     const completeBtnText = document.getElementById('btn-save-complete-text');
     
     if (titleEl) titleEl.innerText = exercise.name;
-    if (subTitleEl) subTitleEl.innerText = `${setIndex + 1}세트 수정 (총 ${exercise.sets.length}세트)`;
+    if (subTitleEl) subTitleEl.innerText = `${sIdx + 1}세트 수정 (총 ${exercise.sets.length}세트)`;
     if (completeBtnText) {
         completeBtnText.innerText = set.completed ? '수정사항 저장 & 완료 유지' : '세트 완료 및 저장';
     }
     
     if (applySubBtn) {
-        if (setIndex >= exercise.sets.length - 1) {
+        if (sIdx >= exercise.sets.length - 1) {
             applySubBtn.classList.add('hidden');
         } else {
             applySubBtn.classList.remove('hidden');
@@ -434,8 +531,8 @@ function openSetEditModal(exIndex, setIndex) {
 }
 
 function updateEditModal1RM() {
-    if (!currentEditingSet || !state.activeWorkout) return;
-    const exercise = state.activeWorkout.exercises[currentEditingSet.exIndex];
+    if (!currentEditingSet || !state.activeWorkout || !state.activeWorkout.exercises) return;
+    const exercise = state.activeWorkout.exercises.find(e => e.id === currentEditingSet.exId);
     if (!exercise) return;
     
     const wInput = document.getElementById('edit-weight-input');
@@ -474,20 +571,23 @@ function adjustEditVal(field, val) {
 }
 
 function saveSetEdit(applyToSubsequent = false) {
-    if(!currentEditingSet) return;
+    if (!currentEditingSet || !state.activeWorkout || !state.activeWorkout.exercises) return;
     const w = document.getElementById('edit-weight-input').value;
     const r = document.getElementById('edit-reps-input').value;
     
-    const exercise = state.activeWorkout.exercises[currentEditingSet.exIndex];
+    const exercise = state.activeWorkout.exercises.find(e => e.id === currentEditingSet.exId);
+    if (!exercise || !exercise.sets) return;
+    const sIdx = exercise.sets.findIndex(s => s.id === currentEditingSet.setId);
+    if (sIdx === -1) return;
+
     if (applyToSubsequent) {
-        for (let s = currentEditingSet.setIndex; s < exercise.sets.length; s++) {
+        for (let s = sIdx; s < exercise.sets.length; s++) {
             exercise.sets[s].weight = w;
             exercise.sets[s].reps = r;
         }
     } else {
-        const set = exercise.sets[currentEditingSet.setIndex];
-        set.weight = w;
-        set.reps = r;
+        exercise.sets[sIdx].weight = w;
+        exercise.sets[sIdx].reps = r;
     }
     
     closeModal('set-edit-modal');
@@ -496,26 +596,27 @@ function saveSetEdit(applyToSubsequent = false) {
 }
 
 function saveAndCompleteSet(applyToSubsequent = false) {
-    if(!currentEditingSet) return;
+    if (!currentEditingSet || !state.activeWorkout || !state.activeWorkout.exercises) return;
     const w = document.getElementById('edit-weight-input').value;
     const r = document.getElementById('edit-reps-input').value;
     
-    const exIndex = currentEditingSet.exIndex;
-    const setIndex = currentEditingSet.setIndex;
-    const exercise = state.activeWorkout.exercises[exIndex];
-    
+    const exIdx = state.activeWorkout.exercises.findIndex(e => e.id === currentEditingSet.exId);
+    if (exIdx === -1) return;
+    const exercise = state.activeWorkout.exercises[exIdx];
+    const sIdx = exercise.sets.findIndex(s => s.id === currentEditingSet.setId);
+    if (sIdx === -1) return;
+
     if (applyToSubsequent) {
-        for (let s = setIndex; s < exercise.sets.length; s++) {
+        for (let s = sIdx; s < exercise.sets.length; s++) {
             exercise.sets[s].weight = w;
             exercise.sets[s].reps = r;
         }
     } else {
-        const set = exercise.sets[setIndex];
-        set.weight = w;
-        set.reps = r;
+        exercise.sets[sIdx].weight = w;
+        exercise.sets[sIdx].reps = r;
     }
     
-    const currentSet = exercise.sets[setIndex];
+    const currentSet = exercise.sets[sIdx];
     const wasCompleted = currentSet.completed;
     currentSet.completed = true;
     
@@ -530,48 +631,8 @@ function saveAndCompleteSet(applyToSubsequent = false) {
 
     const isAllCompleted = exercise.sets.every(s => s.completed);
     if (isAllCompleted && !exercise.rpeRated && state.activeWorkout.routineId) {
-        setTimeout(() => openRpeModal(exIndex), 400);
+        setTimeout(() => openRpeModal(exIdx), 400);
     }
-}
-
-function removeExercise(i) {
-    state.activeWorkout.exercises.splice(i, 1);
-    saveActiveWorkout();
-    updateUI();
-}
-
-function addSet(i) { 
-    const ex = state.activeWorkout.exercises[i];
-    const last = ex.sets[ex.sets.length - 1] || {weight:'0', reps:'0'};
-    ex.sets.push({weight: last.weight, reps: last.reps, completed: false});
-    saveActiveWorkout();
-    updateUI();
-}
-
-function startWorkoutTimer() {
-    if (workoutTimerInterval) clearInterval(workoutTimerInterval);
-    
-    const startEl = document.getElementById('workout-start-time');
-    const timerEl = document.getElementById('workout-timer');
-    
-    if(!state.activeWorkout.startTime) {
-        state.activeWorkout.startTime = Date.now();
-        saveActiveWorkout();
-    }
-    
-    const date = new Date(state.activeWorkout.startTime);
-    if (startEl) {
-        startEl.innerHTML = `<i data-lucide="clock" class="w-3 h-3 inline mr-1"></i>${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')} 시작`;
-    }
-    
-    workoutTimerInterval = setInterval(() => {
-        if (!state.activeWorkout) return;
-        const diff = Date.now() - state.activeWorkout.startTime;
-        const h = Math.floor(diff / 3600000).toString().padStart(2, '0');
-        const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
-        const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
-        if (timerEl) timerEl.innerText = `${h}:${m}:${s}`;
-    }, 1000);
 }
 
 function startWorkout(rId) {
@@ -583,7 +644,11 @@ function startWorkout(rId) {
             name = r.name;
             exercises = JSON.parse(JSON.stringify(r.exercises));
             exercises.forEach(e => { 
-                e.sets.forEach(s => s.completed = false);
+                e.id = generateUid('ex');
+                (e.sets || []).forEach(s => {
+                    s.id = generateUid('set');
+                    s.completed = false;
+                });
                 const dbE = exerciseDB.find(db=>db.name===e.name);
                 if(dbE) {
                     e.weightType = dbE.defaultWeightType || 'total';
@@ -593,7 +658,7 @@ function startWorkout(rId) {
         }
     }
     state.activeWorkout = {
-        id: Date.now().toString(),
+        id: generateUid('workout'),
         routineId: rId,
         name: name,
         startTime: Date.now(),
@@ -803,8 +868,8 @@ function finalizeWorkout() {
     const prSectionEl = document.getElementById('summary-pr-section');
     const newPrs = [];
     
-    if (workout && workout.exercises) {
-        workout.exercises.forEach(ex => {
+    if (record && record.exercises) {
+        record.exercises.forEach(ex => {
             let todayMax1RM = 0;
             let todayBestSet = null;
             (ex.sets || []).forEach(s => {
@@ -820,7 +885,7 @@ function finalizeWorkout() {
             // Check past PR before today's workout
             let pastMax1RM = 0;
             (state.history || []).forEach(h => {
-                if (h.id === workout.id || h.isRunning || !h.exercises) return;
+                if (h.id === record.id || h.isRunning || !h.exercises) return;
                 h.exercises.forEach(he => {
                     if (he.name !== ex.name || !he.sets) return;
                     he.sets.forEach(s => {
@@ -909,7 +974,11 @@ function changeRoutine(rId) {
     
     const exercises = JSON.parse(JSON.stringify(r.exercises));
     exercises.forEach(e => { 
-        e.sets.forEach(s => s.completed = false);
+        e.id = generateUid('ex');
+        (e.sets || []).forEach(s => {
+            s.id = generateUid('set');
+            s.completed = false;
+        });
         const dbE = exerciseDB.find(db=>db.name===e.name);
         if(dbE) {
             e.weightType = dbE.defaultWeightType || 'total';

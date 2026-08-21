@@ -84,7 +84,7 @@ function renderCalendar() {
             const firstGym = gymWorkouts[0];
             const tags = typeof getWorkoutMuscleTags === 'function' ? getWorkoutMuscleTags(firstGym) : [];
             if (tags.length > 0) {
-                tagsPreview = `<div class="text-[8px] leading-tight text-emerald-400 font-black truncate max-w-full px-0.5 mt-0.5">${tags[0]}</div>`;
+                tagsPreview = `<div class="text-[8px] leading-tight text-emerald-400 font-black truncate max-w-full px-0.5 mt-0.5 z-10">${tags[0]}</div>`;
             }
         }
         
@@ -101,8 +101,8 @@ function renderCalendar() {
         
         html += `
             <div class="min-h-[44px] flex flex-col items-center justify-center relative cursor-pointer active:scale-90 transition-transform py-1 rounded-xl hover:bg-slate-700/40" onclick="showDateInfo('${dateStr}')">
-                <span class="text-xs font-bold ${isToday ? 'text-white' : 'text-slate-400'} z-10">${i}</span>
-                ${isToday ? `<div class="absolute inset-0.5 bg-slate-700 rounded-xl -z-0 border border-slate-600"></div>` : ''}
+                <span class="text-xs font-bold ${isToday ? 'text-brand-300 font-black' : 'text-slate-400'} z-10">${i}</span>
+                ${isToday ? `<div class="absolute inset-0.5 bg-slate-700/90 rounded-xl z-0 border border-brand-500/40 shadow-sm"></div>` : ''}
                 ${tagsPreview || dotHtml}
             </div>
         `;
